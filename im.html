@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TerraNova / Wanderlust | Pune Travel Portal</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Top Navigation Bar -->
+    <header class="site-header">
+        <div class="brand-box">
+            <span class="brand-symbol">🌐</span>
+            <span class="brand-title">TerraNova / <b>Wanderlust</b></span>
+        </div>
+        <nav class="navigation-links">
+            <a href="#hero">Home</a>
+            <a href="#featured">Featured</a>
+            <a href="#explore">Explore</a>
+            <a href="#budget">Cost Calculator</a>
+        </nav>
+        <div class="user-action-area">
+            <button type="button" class="itinerary-open-btn" onclick="toggleWishlist()">
+                📌 My Itinerary <span id="wishlistCounter" class="badge-count">0</span>
+            </button>
+            <button type="button" class="primary-pass-btn" onclick="openPassModal('General Inquiry Pass')">Get Tour Pass</button>
+        </div>
+    </header>
+
+    <!-- Wishlist Drawer -->
+    <aside id="wishlistDrawer" class="wishlist-sidebar hidden">
+        <div class="sidebar-top">
+            <h3>📌 My Saved Itinerary</h3>
+            <button type="button" class="close-sidebar-btn" onclick="toggleWishlist()">&times;</button>
+        </div>
+        <div class="sidebar-content" id="wishlistItemsContainer"></div>
+        <div class="sidebar-bottom">
+            <button type="button" class="clear-wishlist-link" onclick="emptyWishlist()">Clear Wishlist</button>
+            <button type="button" class="submit-action-btn full-width" onclick="bookWishlistTour()">Book Custom Tour</button>
+        </div>
+    </aside>
+    <div id="drawerOverlay" class="screen-backdrop hidden" onclick="toggleWishlist()"></div>
+
+    <main class="page-body">
+        <!-- Hero Search Section -->
+        <section id="hero" class="hero-showcase">
+            <div class="hero-tagline">Western Ghats & Heritage Expedition Portal</div>
+            <h1 class="hero-headline">EXPLORE 50 WILD & HERITAGE GETAWAYS IN PUNE</h1>
+            <p class="hero-description">Verified fort climbs, royal citadels, emerald lakes, roaring waterfalls, ghat routes, custom mileage fuel calculator, and personal trip planner.</p>
+            
+            <div class="search-box-wrap">
+                <span class="search-indicator">🔍</span>
+                <input type="text" id="destinationSearchInput" placeholder="Type destination/type and press Enter (e.g. heritage, trek, dam)..." onkeydown="handleSearchKey(event)">
+                <button type="button" class="search-action-btn" onclick="runSearch()">Search</button>
+            </div>
+            
+            <div class="hero-quick-facts">
+                <div class="fact-bubble"><b>50</b> Destinations</div>
+                <div class="fact-bubble"><b>Custom</b> Fuel & Mileage</div>
+                <div class="fact-bubble"><b>Wishlist</b> LocalStorage</div>
+            </div>
+        </section>
+
+        <!-- Featured Section (Single Card) -->
+        <section id="featured" class="content-block">
+            <div class="section-title-wrap">
+                <h2 class="main-heading">Top 6 Iconic Highlights</h2>
+                <p class="sub-heading">The crown jewels of Pune tourism with live hotel mapping and trail advisories.</p>
+            </div>
+
+            <div class="featured-cards-row">
+                <article class="highlight-place-card">
+                    <div class="card-cover">
+                        <img src="https://images.unsplash.com/photo-1596176530529-78163a4f7af2?w=600" alt="Sinhagad Fort">
+                        <span class="category-stamp trek">Historic Trek</span>
+                        <button type="button" class="save-heart-btn" onclick="toggleSavedItem('Sinhagad Fort Ridge', this)" title="Save to Itinerary">🤍</button>
+                    </div>
+                    <div class="card-details">
+                        <div class="title-with-status">
+                            <h3>Sinhagad Fort Ridge</h3>
+                            <span class="season-badge open">🟢 Open • Peak Season</span>
+                        </div>
+                        <p>Climb legendary bastions offering sweeping panoramic valley views, morning mist, and authentic pithla bhakri.</p>
+                        <div class="transit-brief">
+                            <span>🚆 <b>Rail:</b> Pune Jn (32 km)</span>
+                            <span>🚌 <b>Bus:</b> Swargate Bus Station (28 km)</span>
+                        </div>
+                        <div class="card-buttons">
+                            <a href="https://maps.google.com/?q=Sinhagad+Fort+Pune" target="_blank" class="outline-action-link">Google Maps</a>
+                            <button type="button" class="solid-action-btn" onclick="openPassModal('Sinhagad Fort Ridge')">Book</button>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <!-- Explore Section (Single Card) -->
+        <section id="explore" class="content-block">
+            <div class="section-title-wrap">
+                <h2 class="main-heading">Explore All 50 Destinations</h2>
+                <p class="sub-heading">Click a category pill below or use the top search bar (press Enter) to reveal cards.</p>
+            </div>
+
+            <div class="category-buttons-bar">
+                <button class="filter-tab-btn active" onclick="applyCategoryFilter('all', this)">All Categories</button>
+                <button class="filter-tab-btn" onclick="applyCategoryFilter('heritage', this)">🏛️ Heritage & Monuments</button>
+                <button class="filter-tab-btn" onclick="applyCategoryFilter('trek', this)">⛰️ Forts & Treks</button>
+                <button class="filter-tab-btn" onclick="applyCategoryFilter('dam', this)">🌊 Dams</button>
+            </div>
+
+            <div id="searchFilterPill" class="active-query-strip hidden">
+                <span class="query-intro">Active Filter:</span>
+                <span class="query-pill">
+                    <span id="queryLabel">Query</span>
+                    <button type="button" class="drop-filter-btn" onclick="resetSearch()">&times;</button>
+                </span>
+            </div>
+
+            <div class="explore-catalog-grid" id="placesContainer">
+                <article class="place-catalog-card" data-category="heritage" data-name="Aga Khan Palace Italian Arches">
+                    <div class="card-cover">
+                        <img src="https://images.unsplash.com/photo-1582650625119-3a31f8418b7d?w=600" alt="Aga Khan Palace">
+                        <span class="category-stamp heritage">Heritage</span>
+                        <button type="button" class="save-heart-btn" onclick="toggleSavedItem('Aga Khan Palace', this)">🤍</button>
+                    </div>
+                    <div class="card-details">
+                        <div class="title-with-status">
+                            <h3>Aga Khan Palace</h3>
+                            <span class="season-badge open">🟢 Open • All Seasons</span>
+                        </div>
+                        <p>Majestic Italian arches and expansive lawns; historically where Mahatma Gandhi was interned during Quit India.</p>
+                        <div class="transit-brief">
+                            <span>🚆 <b>Rail:</b> Pune Jn (5 km)</span>
+                            <span>🚌 <b>Bus:</b> Yerwada (0.4 km)</span>
+                        </div>
+                        <div class="card-buttons">
+                            <a href="https://maps.google.com/?q=Aga+Khan+Palace+Pune" target="_blank" class="outline-action-link">Google Maps</a>
+                            <button type="button" class="solid-action-btn" onclick="openPassModal('Aga Khan Palace')">Book</button>
+                        </div>
+                    </div>
+                </article>
+            </div>
+
+            <div id="noMatchesText" class="empty-state-notice hidden">
+                <p>⚠️ No matching locations found. Try searching for "heritage", "trek", or "dam".</p>
+            </div>
+        </section>
+
+        <!-- Trip Calculator Section -->
+        <section id="budget" class="content-block">
+            <div class="section-title-wrap">
+                <div class="badge-mini">🧮 Custom Mileage & Fuel Planner</div>
+                <h2 class="main-heading">Estimate Your Expedition Budget</h2>
+                <p class="sub-heading">Choose your vehicle, set your real mileage & local fuel price, and calculate exact fuel litres and trip expenses.</p>
+            </div>
+
+            <div class="calculator-layout">
+                <div class="calculator-inputs">
+                    <div class="input-row-group">
+                        <label class="group-label">Transport Mode:</label>
+                        <div class="option-chips-wrap">
+                            <label class="selection-chip">
+                                <input type="radio" name="travelModeOption" value="bike" checked onchange="updateVehicleSettings()">
+                                <span>🏍️ Motorcycle</span>
+                            </label>
+                            <label class="selection-chip">
+                                <input type="radio" name="travelModeOption" value="car" onchange="updateVehicleSettings()">
+                                <span>🚗 Car / SUV</span>
+                            </label>
+                            <label class="selection-chip">
+                                <input type="radio" name="travelModeOption" value="bus" onchange="updateVehicleSettings()">
+                                <span>🚌 ST Bus / Public Transit</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="fuelSettingsArea" class="fuel-inputs-row">
+                        <div class="single-param-field">
+                            <label for="costPerLitre">Petrol / Fuel Price (₹ / Litre):</label>
+                            <div class="currency-entry-box">
+                                <span class="prefix">₹</span>
+                                <input type="number" id="costPerLitre" value="105" min="50" max="200" step="0.5" oninput="runBudgetMath()">
+                            </div>
+                        </div>
+                        <div class="single-param-field">
+                            <label for="fuelEfficiency">Vehicle Mileage (km / Litre):</label>
+                            <div class="currency-entry-box">
+                                <span class="prefix">⚡</span>
+                                <input type="number" id="fuelEfficiency" value="45" min="5" max="90" step="1" oninput="runBudgetMath()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="busFareAlert" class="info-alert-box hidden">
+                        <span>ℹ️ ST Bus fares are calculated at a standard ₹1.60 per kilometer per traveler.</span>
+                    </div>
+
+                    <div class="input-row-group">
+                        <label class="group-label">Stay Type:</label>
+                        <div class="option-chips-wrap">
+                            <label class="selection-chip">
+                                <input type="radio" name="lodgingOption" value="daytrip" checked onchange="runBudgetMath()">
+                                <span>☀️ Same Day Return (₹0)</span>
+                            </label>
+                            <label class="selection-chip">
+                                <input type="radio" name="lodgingOption" value="camp" onchange="runBudgetMath()">
+                                <span>⛺ Lakeside Tent (₹800/person)</span>
+                            </label>
+                            <label class="selection-chip">
+                                <input type="radio" name="lodgingOption" value="resort" onchange="runBudgetMath()">
+                                <span>🏨 Agro Resort / Villa (₹2,200/person)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="range-sliders-grid">
+                        <div class="slider-field">
+                            <label for="routeDistance">Round-Trip Distance: <b id="distanceReadout">60 km</b></label>
+                            <input type="range" id="routeDistance" min="20" max="300" step="10" value="60" oninput="runBudgetMath()">
+                        </div>
+                        <div class="slider-field">
+                            <label for="groupSize">Number of Explorers: <b id="groupSizeReadout">2 Persons</b></label>
+                            <input type="range" id="groupSize" min="1" max="10" step="1" value="2" oninput="runBudgetMath()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calculator Receipt -->
+                <div class="calculator-bill">
+                    <h3>Estimated Expedition Cost</h3>
+                    
+                    <div class="bill-line special-highlight">
+                        <span id="fuelUsageLabel">Estimated Fuel Consumption:</span>
+                        <b id="fuelQuantityDisplay">1.33 Litres</b>
+                    </div>
+
+                    <div class="bill-line">
+                        <span>Total Fuel / Transit Cost:</span>
+                        <span id="travelExpenseDisplay">₹140</span>
+                    </div>
+                    <div class="bill-line">
+                        <span>Food & Local Dhaba Snacks:</span>
+                        <span id="mealExpenseDisplay">₹700</span>
+                    </div>
+                    <div class="bill-line">
+                        <span>Lodging / Accommodation:</span>
+                        <span id="stayExpenseDisplay">₹0</span>
+                    </div>
+                    <div class="bill-line">
+                        <span>Permits & Forest Passes:</span>
+                        <span id="passExpenseDisplay">₹100</span>
+                    </div>
+                    <hr class="bill-divider">
+                    <div class="bill-total-row">
+                        <span>Total Estimated Budget:</span>
+                        <span id="overallBudgetDisplay" class="grand-total-amount">₹940</span>
+                    </div>
+                    <button type="button" class="submit-action-btn full-width" onclick="openPassModal('Calculated Budget Package')">Lock in This Trip</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer Component[cite: 2] -->
+    <footer class="site-footer">
+        <div class="footer-container">
+            <div class="footer-links-section">
+                <h4>Quick links</h4>
+                <div class="footer-links-columns">
+                    <div class="footer-column">
+                        <a href="#hero">Home</a>
+                        <a href="#featured">Packages & Pricing</a>
+                        <a href="#budget">Contact Us</a>
+                    </div>
+                    <div class="footer-column">
+                        <a href="#explore">Book Now</a>
+                        <a href="#budget">Contact</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-newsletter-section">
+                <h4>Newsletter</h4>
+                <div class="newsletter-field-box">
+                    <input type="text" placeholder="Newsletter, sign up, or activity">
+                    <button type="button" class="newsletter-submit-btn">➤</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-divider-line"></div>
+
+        <div class="footer-bottom-bar">
+            <p>&copy; 2026 <b>TerraNova / Wanderlust</b>. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Pass Registration Modal -->
+    <div id="passBookingModal" class="modal-backdrop hidden">
+        <div class="modal-dialog">
+            <button type="button" class="dismiss-modal-btn" onclick="closePassModal()">&times;</button>
+            <div class="modal-header-text">
+                <span class="modal-eyebrow">Direct Pass Reservation</span>
+                <h3 id="modalTargetTitle">Book Tour Pass</h3>
+                <p>Register your verified entry pass or guided slot below.</p>
+            </div>
+            
+            <form class="booking-data-form" onsubmit="submitPassForm(event)">
+                <div class="form-field-group">
+                    <label for="chosenDestinationField">Selected Destination</label>
+                    <input type="text" id="chosenDestinationField" name="chosenDestination" readonly>
+                </div>
+
+                <div class="form-two-column">
+                    <div class="form-field-group">
+                        <label for="travelerName">Your Full Name</label>
+                        <input type="text" id="travelerName" name="travelerName" placeholder="Swarnim Koratkar" required>
+                    </div>
+                    <div class="form-field-group">
+                        <label for="travelerEmail">Email Address</label>
+                        <input type="email" id="travelerEmail" name="travelerEmail" placeholder="swarnim@example.com" required>
+                    </div>
+                </div>
+
+                <div class="form-two-column">
+                    <div class="form-field-group">
+                        <label for="visitDate">Date of Visit</label>
+                        <input type="date" id="visitDate" name="visitDate" required>
+                    </div>
+                    <div class="form-field-group">
+                        <label for="passAmount">Pass Count</label>
+                        <input type="number" id="passAmount" name="passAmount" min="1" max="15" value="1" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-action-btn full-width">Confirm & Generate Digital Pass</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Application Scripts -->
+    <script>
+        function handleSearchKey(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                runSearch();
+            }
+        }
+
+        function runSearch() {
+            const term = document.getElementById('destinationSearchInput').value.toLowerCase().trim();
+            if (!term) return;
+
+            document.getElementById('searchFilterPill').classList.remove('hidden');
+            document.getElementById('queryLabel').innerText = `Search: "${term}"`;
+
+            document.querySelectorAll('.filter-tab-btn').forEach(btn => btn.classList.remove('active'));
+
+            const card = document.querySelector('.place-catalog-card');
+            const cardName = card.getAttribute('data-name').toLowerCase();
+            const cardCategory = card.getAttribute('data-category').toLowerCase();
+            const cardText = card.innerText.toLowerCase();
+
+            const isMatch = cardName.includes(term) || cardCategory.includes(term) || cardText.includes(term);
+            card.style.display = isMatch ? 'flex' : 'none';
+
+            document.getElementById('noMatchesText').classList.toggle('hidden', isMatch);
+            document.getElementById('explore').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function applyCategoryFilter(cat, btn) {
+            document.querySelectorAll('.filter-tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            document.getElementById('destinationSearchInput').value = '';
+            document.getElementById('searchFilterPill').classList.remove('hidden');
+            document.getElementById('queryLabel').innerText = `Category: ${btn.innerText}`;
+
+            const card = document.querySelector('.place-catalog-card');
+            const cardCategory = card.getAttribute('data-category');
+            const isVisible = (cat === 'all' || cardCategory === cat);
+
+            card.style.display = isVisible ? 'flex' : 'none';
+            document.getElementById('noMatchesText').classList.toggle('hidden', isVisible);
+            document.getElementById('explore').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function resetSearch() {
+            document.getElementById('destinationSearchInput').value = '';
+            document.getElementById('searchFilterPill').classList.add('hidden');
+            document.getElementById('noMatchesText').classList.add('hidden');
+
+            const allTab = document.querySelector('.filter-tab-btn');
+            document.querySelectorAll('.filter-tab-btn').forEach(b => b.classList.remove('active'));
+            allTab.classList.add('active');
+
+            document.querySelector('.place-catalog-card').style.display = 'flex';
+        }
+
+        function updateVehicleSettings() {
+            const mode = document.querySelector('input[name="travelModeOption"]:checked').value;
+            const fuelBlock = document.getElementById('fuelSettingsArea');
+            const busAlert = document.getElementById('busFareAlert');
+            const mileageField = document.getElementById('fuelEfficiency');
+
+            if (mode === 'bike') {
+                fuelBlock.classList.remove('hidden');
+                busAlert.classList.add('hidden');
+                mileageField.value = 45;
+            } else if (mode === 'car') {
+                fuelBlock.classList.remove('hidden');
+                busAlert.classList.add('hidden');
+                mileageField.value = 16;
+            } else {
+                fuelBlock.classList.add('hidden');
+                busAlert.classList.remove('hidden');
+            }
+            runBudgetMath();
+        }
+
+        function runBudgetMath() {
+            const distance = parseInt(document.getElementById('routeDistance').value);
+            const people = parseInt(document.getElementById('groupSize').value);
+            const mode = document.querySelector('input[name="travelModeOption"]:checked').value;
+
+            document.getElementById('distanceReadout').innerText = `${distance} km`;
+            document.getElementById('groupSizeReadout').innerText = `${people} ${people > 1 ? 'Persons' : 'Person'}`;
+
+            let transitCost = 0;
+            let litresUsed = 0;
+
+            if (mode === 'bus') {
+                transitCost = Math.round(distance * 1.60 * people);
+                document.getElementById('fuelUsageLabel').innerText = "Bus Mode Active:";
+                document.getElementById('fuelQuantityDisplay').innerText = "Public Transit Fare";
+            } else {
+                const fuelPrice = parseFloat(document.getElementById('costPerLitre').value) || 105;
+                const mileage = parseFloat(document.getElementById('fuelEfficiency').value) || (mode === 'bike' ? 45 : 16);
+
+                litresUsed = (distance / mileage);
+                transitCost = Math.round(litresUsed * fuelPrice);
+
+                document.getElementById('fuelUsageLabel').innerText = "Estimated Fuel Consumption:";
+                document.getElementById('fuelQuantityDisplay').innerText = `${litresUsed.toFixed(2)} Litres`;
+            }
+
+            const foodCost = people * 350;
+            const stayChoice = document.querySelector('input[name="lodgingOption"]:checked').value;
+            let perHeadStay = 0;
+            if (stayChoice === 'camp') perHeadStay = 800;
+            if (stayChoice === 'resort') perHeadStay = 2200;
+
+            const stayCost = people * perHeadStay;
+            const passCost = people * 50;
+            const total = transitCost + foodCost + stayCost + passCost;
+
+            document.getElementById('travelExpenseDisplay').innerText = `₹${transitCost}`;
+            document.getElementById('mealExpenseDisplay').innerText = `₹${foodCost}`;
+            document.getElementById('stayExpenseDisplay').innerText = `₹${stayCost}`;
+            document.getElementById('passExpenseDisplay').innerText = `₹${passCost}`;
+            document.getElementById('overallBudgetDisplay').innerText = `₹${total.toLocaleString('en-IN')}`;
+        }
+
+        function readWishlistData() {
+            try { return JSON.parse(localStorage.getItem('saved_travel_places')) || []; }
+            catch (e) { return []; }
+        }
+
+        function writeWishlistData(data) {
+            localStorage.setItem('saved_travel_places', JSON.stringify(data));
+            refreshWishlistView();
+        }
+
+        function toggleSavedItem(name, button) {
+            let items = readWishlistData();
+            const itemIndex = items.indexOf(name);
+
+            if (itemIndex === -1) {
+                items.push(name);
+                if (button) button.innerText = '❤️';
+            } else {
+                items.splice(itemIndex, 1);
+                if (button) button.innerText = '🤍';
+            }
+            writeWishlistData(items);
+            syncHeartIcons();
+        }
+
+        function syncHeartIcons() {
+            const list = readWishlistData();
+            document.querySelectorAll('.save-heart-btn').forEach(btn => {
+                const parent = btn.closest('.highlight-place-card') || btn.closest('.place-catalog-card');
+                const title = parent ? parent.querySelector('h3').innerText : '';
+                btn.innerText = list.includes(title) ? '❤️' : '🤍';
+            });
+        }
+
+        function refreshWishlistView() {
+            const list = readWishlistData();
+            document.getElementById('wishlistCounter').innerText = list.length;
+
+            const listWrapper = document.getElementById('wishlistItemsContainer');
+            if (list.length === 0) {
+                listWrapper.innerHTML = `
+                    <div class="empty-list-message">
+                        <span>🤍</span>
+                        <p>No destinations saved yet. Click the heart icon on any card to add spots to your wishlist.</p>
+                    </div>`;
+                return;
+            }
+
+            listWrapper.innerHTML = list.map((spot, i) => `
+                <div class="wishlist-row">
+                    <span class="row-spot-name"><b>${i + 1}. ${spot}</b></span>
+                    <div class="row-buttons">
+                        <button type="button" class="btn-micro" onclick="openPassModal('${spot}')">Book</button>
+                        <button type="button" class="btn-remove-micro" onclick="toggleSavedItem('${spot}')">&times;</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleWishlist() {
+            document.getElementById('wishlistDrawer').classList.toggle('hidden');
+            document.getElementById('drawerOverlay').classList.toggle('hidden');
+        }
+
+        function emptyWishlist() {
+            if (confirm("Remove all saved destinations from your wishlist?")) {
+                localStorage.removeItem('saved_travel_places');
+                refreshWishlistView();
+                syncHeartIcons();
+            }
+        }
+
+        function bookWishlistTour() {
+            const list = readWishlistData();
+            if (!list.length) return alert("Wishlist is empty!");
+            toggleWishlist();
+            openPassModal(`Custom Circuit (${list.length} Places)`);
+        }
+
+        function openPassModal(spotTitle) {
+            document.getElementById('chosenDestinationField').value = spotTitle;
+            document.getElementById('modalTargetTitle').innerText = `Book ${spotTitle}`;
+            document.getElementById('passBookingModal').classList.remove('hidden');
+        }
+
+        function closePassModal() {
+            document.getElementById('passBookingModal').classList.add('hidden');
+        }
+
+        window.onclick = function(e) {
+            const modal = document.getElementById('passBookingModal');
+            if (e.target === modal) closePassModal();
+        };
+
+        function submitPassForm(e) {
+            e.preventDefault();
+            const spot = document.getElementById('chosenDestinationField').value;
+            alert(`Pass confirmed for ${spot}! Details sent to your email.`);
+            closePassModal();
+        }
+
+        // Initialize state
+        runBudgetMath();
+        refreshWishlistView();
+        syncHeartIcons();
+    </script>
+</body>
+</html>
