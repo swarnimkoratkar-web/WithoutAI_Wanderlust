@@ -3,571 +3,1487 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TerraNova / Wanderlust | Pune Travel Portal</title>
+    <title>Wanderlust Pune | 50 Circuits, Trails, Calculator & Live Map</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Leaflet.js CSS for Inbuilt Interactive Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="dark-theme">
 
-    <!-- Top Navigation Bar -->
-    <header class="site-header">
-        <div class="brand-box">
-            <span class="brand-symbol">🌐</span>
-            <span class="brand-title">TerraNova / <b>Wanderlust</b></span>
+    <!-- Sticky Glass Navbar -->
+    <header class="navbar">
+        <div class="nav-brand">
+            <span class="brand-icon">🌐</span>
+            <span class="brand-text"><b>Wanderlust</b></span>
         </div>
-        <nav class="navigation-links">
+        <nav class="nav-menu">
             <a href="#hero">Home</a>
             <a href="#featured">Featured</a>
-            <a href="#explore">Explore</a>
-            <a href="#budget">Cost Calculator</a>
+            <a href="#live-map-section">Inbuilt Map</a>
+            <a href="#explore">Explore (50)</a>
+            <a href="#budget-calculator">Cost Calculator</a>
+            <a href="#matrix">Comparison</a>
         </nav>
-        <div class="user-action-area">
-            <button type="button" class="itinerary-open-btn" onclick="toggleWishlist()">
-                📌 My Itinerary <span id="wishlistCounter" class="badge-count">0</span>
+        <div class="nav-actions">
+            <!-- Light/Dark Mode Switcher -->
+            <button type="button" id="themeToggleBtn" class="btn-theme-toggle" onclick="toggleTheme()" title="Toggle Light/Dark Theme">
+                <span id="themeIcon">☀️</span>
             </button>
-            <button type="button" class="primary-pass-btn" onclick="openPassModal('General Inquiry Pass')">Get Tour Pass</button>
+            <!-- Favorites Drawer Trigger -->
+            <button type="button" class="btn-itinerary-nav" onclick="toggleItineraryDrawer()">
+                📌 My Itinerary <span id="itineraryCountBadge" class="count-badge">0</span>
+            </button>
+            <button type="button" class="nav-cta" onclick="openBookingModal('General Inquiry Pass')">Get Tour Pass</button>
         </div>
     </header>
 
-    <!-- Wishlist Drawer -->
-    <aside id="wishlistDrawer" class="wishlist-sidebar hidden">
-        <div class="sidebar-top">
+    <!-- Slide-Out Itinerary Drawer -->
+    <aside id="itineraryDrawer" class="itinerary-drawer hidden">
+        <div class="drawer-header">
             <h3>📌 My Saved Itinerary</h3>
-            <button type="button" class="close-sidebar-btn" onclick="toggleWishlist()">&times;</button>
+            <button type="button" class="btn-close-drawer" onclick="toggleItineraryDrawer()">&times;</button>
         </div>
-        <div class="sidebar-content" id="wishlistItemsContainer"></div>
-        <div class="sidebar-bottom">
-            <button type="button" class="clear-wishlist-link" onclick="emptyWishlist()">Clear Wishlist</button>
-            <button type="button" class="submit-action-btn full-width" onclick="bookWishlistTour()">Book Custom Tour</button>
+        <div class="drawer-body" id="itineraryList"></div>
+        <div class="drawer-footer">
+            <button type="button" class="btn-clear-itinerary" onclick="clearAllItinerary()">Clear Wishlist</button>
+            <button type="button" class="btn-primary full-width" onclick="bookEntireItinerary()">Book Custom Tour</button>
         </div>
     </aside>
-    <div id="drawerOverlay" class="screen-backdrop hidden" onclick="toggleWishlist()"></div>
+    <div id="drawerBackdrop" class="drawer-backdrop hidden" onclick="toggleItineraryDrawer()"></div>
 
-    <main class="page-body">
-        <!-- Hero Search Section -->
-        <section id="hero" class="hero-showcase">
-            <div class="hero-tagline">Western Ghats & Heritage Expedition Portal</div>
-            <h1 class="hero-headline">EXPLORE 50 WILD & HERITAGE GETAWAYS IN PUNE</h1>
-            <p class="hero-description">Verified fort climbs, royal citadels, emerald lakes, roaring waterfalls, ghat routes, custom mileage fuel calculator, and personal trip planner.</p>
+    <main>
+        <!-- Hero Section with Enter-Only Search -->
+        <section id="hero" class="hero-section">
+            <div class="hero-badge">Western Ghats & Heritage Expedition Portal</div>
+            <h1 class="hero-title">EXPLORE 50 WILD & HERITAGE GETAWAYS IN PUNE</h1>
+            <p class="hero-subtitle">Verified fort climbs, royal citadels, emerald lakes, roaring waterfalls, ghat routes, custom mileage fuel calculator, and personal trip planner.</p>
             
-            <div class="search-box-wrap">
-                <span class="search-indicator">🔍</span>
-                <input type="text" id="destinationSearchInput" placeholder="Type destination/type and press Enter (e.g. heritage, trek, dam)..." onkeydown="handleSearchKey(event)">
-                <button type="button" class="search-action-btn" onclick="runSearch()">Search</button>
+            <div class="search-container">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="liveSearchBar" placeholder="Type destination/type and press Enter (e.g. heritage, trek, dam)..." onkeydown="handleSearchKeyDown(event)">
+                <button type="button" class="btn-search-go" onclick="executeSearch()">Search</button>
             </div>
             
-            <div class="hero-quick-facts">
-                <div class="fact-bubble"><b>50</b> Destinations</div>
-                <div class="fact-bubble"><b>Custom</b> Fuel & Mileage</div>
-                <div class="fact-bubble"><b>Wishlist</b> LocalStorage</div>
+            <div class="hero-stats">
+                <div class="stat-pill"><b>50</b> Destinations</div>
+                <div class="stat-pill"><b>Custom</b> Fuel & Mileage</div>
+                <div class="stat-pill"><b>Wishlist</b> LocalStorage</div>
             </div>
         </section>
 
-        <!-- Featured Section (Single Card) -->
-        <section id="featured" class="content-block">
-            <div class="section-title-wrap">
-                <h2 class="main-heading">Top 6 Iconic Highlights</h2>
-                <p class="sub-heading">The crown jewels of Pune tourism with live hotel mapping and trail advisories.</p>
+        <!-- Top 6 Featured Iconic Locations -->
+        <section id="featured" class="section-container">
+            <div class="section-header-wrap">
+                <h2 class="section-heading">Top 6 Iconic Highlights</h2>
+                <p class="section-subheading">The crown jewels of Pune tourism with live hotel mapping and trail advisories.</p>
             </div>
 
-            <div class="featured-cards-row">
-                <article class="highlight-place-card">
-                    <div class="card-cover">
+            <div class="featured-grid">
+                <!-- Featured 1 -->
+                <article class="featured-card">
+                    <div class="card-img-wrap">
                         <img src="https://images.unsplash.com/photo-1596176530529-78163a4f7af2?w=600" alt="Sinhagad Fort">
-                        <span class="category-stamp trek">Historic Trek</span>
-                        <button type="button" class="save-heart-btn" onclick="toggleSavedItem('Sinhagad Fort Ridge', this)" title="Save to Itinerary">🤍</button>
+                        <span class="tag-badge trek">Historic Trek</span>
+                        <button type="button" class="btn-fav" onclick="toggleFavorite('Sinhagad Fort Ridge', this)" title="Save to Itinerary">🤍</button>
                     </div>
-                    <div class="card-details">
-                        <div class="title-with-status">
+                    <div class="featured-content">
+                        <div class="card-header-row">
                             <h3>Sinhagad Fort Ridge</h3>
-                            <span class="season-badge open">🟢 Open • Peak Season</span>
+                            <span class="feasibility-badge ideal">🟢 Open • Peak Season</span>
                         </div>
                         <p>Climb legendary bastions offering sweeping panoramic valley views, morning mist, and authentic pithla bhakri.</p>
-                        <div class="transit-brief">
+                        <div class="card-transit-info">
                             <span>🚆 <b>Rail:</b> Pune Jn (32 km)</span>
                             <span>🚌 <b>Bus:</b> Swargate Bus Station (28 km)</span>
                         </div>
-                        <div class="card-buttons">
-                            <a href="https://maps.google.com/?q=Sinhagad+Fort+Pune" target="_blank" class="outline-action-link">Google Maps</a>
-                            <button type="button" class="solid-action-btn" onclick="openPassModal('Sinhagad Fort Ridge')">Book</button>
+                        <div class="card-action-row">
+                            <button type="button" class="btn-live-map" onclick="showOnInbuiltMap('sinhagad')">🗺️ Inbuilt Map</button>
+                            <a href="https://maps.google.com/?q=Sinhagad+Fort+Pune" target="_blank" class="btn-map">Google Maps</a>
+                            <button type="button" class="btn-book-card" onclick="openBookingModal('Sinhagad Fort Ridge')">Book</button>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Featured 2 -->
+                <article class="featured-card">
+                    <div class="card-img-wrap">
+                        <img src="https://images.unsplash.com/photo-1582650625119-3a31f8418b7d?w=600" alt="Shaniwar Wada">
+                        <span class="tag-badge heritage">Heritage Site</span>
+                        <button type="button" class="btn-fav" onclick="toggleFavorite('Shaniwar Wada Palace', this)" title="Save to Itinerary">🤍</button>
+                    </div>
+                    <div class="featured-content">
+                        <div class="card-header-row">
+                            <h3>Shaniwar Wada Palace</h3>
+                            <span class="feasibility-badge ideal">🟢 Open • All-Year Clear</span>
+                        </div>
+                        <p>The 18th-century grand seat of the Peshwa rulers inside the city core, renowned for its towering Delhi Darwaza gate.</p>
+                        <div class="card-transit-info">
+                            <span>🚆 <b>Rail:</b> Shivaji Nagar (2.5 km)</span>
+                            <span>🚌 <b>Bus:</b> Pune Station Bus Stand (3 km)</span>
+                        </div>
+                        <div class="card-action-row">
+                            <button type="button" class="btn-live-map" onclick="showOnInbuiltMap('shaniwarwada')">🗺️ Inbuilt Map</button>
+                            <a href="https://maps.google.com/?q=Shaniwar+Wada+Pune" target="_blank" class="btn-map">Google Maps</a>
+                            <button type="button" class="btn-book-card" onclick="openBookingModal('Shaniwar Wada Palace')">Book</button>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Featured 3 -->
+                <article class="featured-card">
+                    <div class="card-img-wrap">
+                        <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600" alt="Tamhini Ghat">
+                        <span class="tag-badge ride">Bike / Car Ride</span>
+                        <button type="button" class="btn-fav" onclick="toggleFavorite('Tamhini Ghat Pass', this)" title="Save to Itinerary">🤍</button>
+                    </div>
+                    <div class="featured-content">
+                        <div class="card-header-row">
+                            <h3>Tamhini Ghat Pass</h3>
+                            <span class="feasibility-badge caution">🟡 Dense Fog Advisory</span>
+                        </div>
+                        <p>A driving and motorcycling mountain pass filled with emerald green valleys, cloud tunnels, and roadside cascades.</p>
+                        <div class="card-transit-info">
+                            <span>🚆 <b>Rail:</b> Mangaon Station (48 km)</span>
+                            <span>🚌 <b>Bus:</b> Paud Bus Stand (35 km)</span>
+                        </div>
+                        <div class="card-action-row">
+                            <button type="button" class="btn-live-map" onclick="showOnInbuiltMap('tamhini')">🗺️ Inbuilt Map</button>
+                            <a href="https://maps.google.com/?q=Tamhini+Ghat+Maharashtra" target="_blank" class="btn-map">Google Maps</a>
+                            <button type="button" class="btn-book-card" onclick="openBookingModal('Tamhini Ghat Pass')">Book</button>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Featured 4 -->
+                <article class="featured-card">
+                    <div class="card-img-wrap">
+                        <img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600" alt="Pawna Lake">
+                        <span class="tag-badge lake">Lakes & Camping</span>
+                        <button type="button" class="btn-fav" onclick="toggleFavorite('Pawna Lake Backwaters', this)" title="Save to Itinerary">🤍</button>
+                    </div>
+                    <div class="featured-content">
+                        <div class="card-header-row">
+                            <h3>Pawna Lake Backwaters</h3>
+                            <span class="feasibility-badge ideal">🟢 Clear Skies • Night Camps</span>
+                        </div>
+                        <p>A tranquil lakeside surrounded by Lohagad, Tikona, and Tung forts. Ideal for nighttime stargazing and kayak outings.</p>
+                        <div class="card-transit-info">
+                            <span>🚆 <b>Rail:</b> Kamshet Station (18 km)</span>
+                            <span>🚌 <b>Bus:</b> Kamshet ST Stand (17 km)</span>
+                        </div>
+                        <div class="card-action-row">
+                            <button type="button" class="btn-live-map" onclick="showOnInbuiltMap('pawna')">🗺️ Inbuilt Map</button>
+                            <a href="https://maps.google.com/?q=Pawna+Lake+Maharashtra" target="_blank" class="btn-map">Google Maps</a>
+                            <button type="button" class="btn-book-card" onclick="openBookingModal('Pawna Lake Backwaters')">Book</button>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Featured 5 -->
+                <article class="featured-card">
+                    <div class="card-img-wrap">
+                        <img src="https://images.unsplash.com/photo-1518457607834-6e8d80c183c5?w=600" alt="Devkund Waterfall">
+                        <span class="tag-badge waterfall">Waterfall</span>
+                        <button type="button" class="btn-fav" onclick="toggleFavorite('Devkund Hidden Waterfall', this)" title="Save to Itinerary">🤍</button>
+                    </div>
+                    <div class="featured-content">
+                        <div class="card-header-row">
+                            <h3>Devkund Hidden Waterfall</h3>
+                            <span class="feasibility-badge restricted">🔴 Guide & Permit Required</span>
+                        </div>
+                        <p>A turquoise natural plunge pool tucked deep within the dense Bhira forests where multiple hill streams converge.</p>
+                        <div class="card-transit-info">
+                            <span>🚆 <b>Rail:</b> Roha Station (42 km)</span>
+                            <span>🚌 <b>Bus:</b> Bhira Village Bus Stop (2 km)</span>
+                        </div>
+                        <div class="card-action-row">
+                            <button type="button" class="btn-live-map" onclick="showOnInbuiltMap('devkund')">🗺️ Inbuilt Map</button>
+                            <a href="https://maps.google.com/?q=Devkund+Waterfall+Bhira" target="_blank" class="btn-map">Google Maps</a>
+                            <button type="button" class="btn-book-card" onclick="openBookingModal('Devkund Hidden Waterfall')">Book</button>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Featured 6 -->
+                <article class="featured-card">
+                    <div class="card-img-wrap">
+                        <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600" alt="Lavasa Road">
+                        <span class="tag-badge ride">Hill Drive</span>
+                        <button type="button" class="btn-fav" onclick="toggleFavorite('Mutha Ghat & Lavasa Road', this)" title="Save to Itinerary">🤍</button>
+                    </div>
+                    <div class="featured-content">
+                        <div class="card-header-row">
+                            <h3>Mutha Ghat & Lavasa Road</h3>
+                            <span class="feasibility-badge ideal">🟢 Clear Tarmac • Weekend Run</span>
+                        </div>
+                        <p>Tightly banked curves, butter-smooth tarmac, and hilltop overlooks favored by motorcycle clubs and drivers.</p>
+                        <div class="card-transit-info">
+                            <span>🚆 <b>Rail:</b> Pune Junction (50 km)</span>
+                            <span>🚌 <b>Bus:</b> Pirangut ST Depot (25 km)</span>
+                        </div>
+                        <div class="card-action-row">
+                            <button type="button" class="btn-live-map" onclick="showOnInbuiltMap('lavasa')">🗺️ Inbuilt Map</button>
+                            <a href="https://maps.google.com/?q=Mutha+Ghat+Maharashtra" target="_blank" class="btn-map">Google Maps</a>
+                            <button type="button" class="btn-book-card" onclick="openBookingModal('Mutha Ghat & Lavasa Road')">Book</button>
                         </div>
                     </div>
                 </article>
             </div>
         </section>
 
-        <!-- Explore Section (Single Card) -->
-        <section id="explore" class="content-block">
-            <div class="section-title-wrap">
-                <h2 class="main-heading">Explore All 50 Destinations</h2>
-                <p class="sub-heading">Click a category pill below or use the top search bar (press Enter) to reveal cards.</p>
+        <!-- Inbuilt Interactive Map Section -->
+        <section id="live-map-section" class="section-container">
+            <div class="section-header-wrap">
+                <div class="badge-map">Live OpenStreetMap Radar</div>
+                <h2 class="section-heading">Interactive Destination & Lodging Map</h2>
+                <p class="section-subheading">Click any pin or click "Inbuilt Map" on a featured card above to inspect nearby hotels, lodges, approach roads, and star ratings.</p>
             </div>
 
-            <div class="category-buttons-bar">
-                <button class="filter-tab-btn active" onclick="applyCategoryFilter('all', this)">All Categories</button>
-                <button class="filter-tab-btn" onclick="applyCategoryFilter('heritage', this)">🏛️ Heritage & Monuments</button>
-                <button class="filter-tab-btn" onclick="applyCategoryFilter('trek', this)">⛰️ Forts & Treks</button>
-                <button class="filter-tab-btn" onclick="applyCategoryFilter('dam', this)">🌊 Dams</button>
+            <div class="map-wrapper">
+                <div id="interactiveMap"></div>
+                <div class="map-legend">
+                    <span class="legend-item"><span class="dot dot-dest"></span> Tourist Destination</span>
+                    <span class="legend-item"><span class="dot dot-hotel"></span> Verified Hotels & Lodges</span>
+                    <span class="legend-item"><span class="dot dot-route"></span> Scenic Road Access</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Explore (50 Destinations with Feasibility Badges & Favorites) -->
+        <section id="explore" class="section-container">
+            <div class="section-header-wrap">
+                <h2 class="section-heading">Explore All 50 Destinations</h2>
+                <p class="section-subheading">Click a category pill below or use the top search bar (press Enter) to reveal cards.</p>
             </div>
 
-            <div id="searchFilterPill" class="active-query-strip hidden">
-                <span class="query-intro">Active Filter:</span>
-                <span class="query-pill">
-                    <span id="queryLabel">Query</span>
-                    <button type="button" class="drop-filter-btn" onclick="resetSearch()">&times;</button>
+            <div class="segment-filter-bar">
+                <button class="filter-pill" onclick="filterCategory('heritage', this)">🏛️ Heritage & Monuments (7)</button>
+                <button class="filter-pill" onclick="filterCategory('trek', this)">⛰️ Forts & Treks (10)</button>
+                <button class="filter-pill" onclick="filterCategory('dam', this)">🌊 Dams (8)</button>
+                <button class="filter-pill" onclick="filterCategory('lake', this)">🛶 Lakes & Camping (7)</button>
+                <button class="filter-pill" onclick="filterCategory('waterfall', this)">💦 Waterfalls (6)</button>
+                <button class="filter-pill" onclick="filterCategory('hill', this)">🍃 Hill Stations (6)</button>
+                <button class="filter-pill" onclick="filterCategory('ride', this)">🏍️ Bike & Car Roads (6)</button>
+            </div>
+
+            <div id="activeFilterBadgeContainer" class="active-badge-container hidden">
+                <span class="active-badge-label">Active Filter:</span>
+                <span class="active-filter-badge">
+                    <span id="activeFilterText">Query</span>
+                    <button type="button" class="btn-remove-filter" onclick="clearSearch()">&times;</button>
                 </span>
             </div>
 
-            <div class="explore-catalog-grid" id="placesContainer">
-                <article class="place-catalog-card" data-category="heritage" data-name="Aga Khan Palace Italian Arches">
-                    <div class="card-cover">
-                        <img src="https://images.unsplash.com/photo-1582650625119-3a31f8418b7d?w=600" alt="Aga Khan Palace">
-                        <span class="category-stamp heritage">Heritage</span>
-                        <button type="button" class="save-heart-btn" onclick="toggleSavedItem('Aga Khan Palace', this)">🤍</button>
-                    </div>
-                    <div class="card-details">
-                        <div class="title-with-status">
-                            <h3>Aga Khan Palace</h3>
-                            <span class="season-badge open">🟢 Open • All Seasons</span>
-                        </div>
+            <div id="initialStateMessage" class="initial-hint-box">
+                <span class="hint-icon">☀️</span>
+                <p>Choose any category above or type a search query and press <b>Enter</b> to display verified locations.</p>
+            </div>
+
+            <!-- 50 Cards Grid -->
+            <div class="cards-grid hidden" id="destinationsGrid">
+                <!-- 1. HERITAGE -->
+                <article class="place-card" data-category="heritage" data-name="Aga Khan Palace Italian Arches">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1582650625119-3a31f8418b7d?w=600" alt="Aga Khan Palace"><span class="tag-badge heritage">Heritage</span><button type="button" class="btn-fav" onclick="toggleFavorite('Aga Khan Palace', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Aga Khan Palace</h3><span class="feasibility-badge ideal">🟢 Open • All Seasons</span></div>
                         <p>Majestic Italian arches and expansive lawns; historically where Mahatma Gandhi was interned during Quit India.</p>
-                        <div class="transit-brief">
-                            <span>🚆 <b>Rail:</b> Pune Jn (5 km)</span>
-                            <span>🚌 <b>Bus:</b> Yerwada (0.4 km)</span>
-                        </div>
-                        <div class="card-buttons">
-                            <a href="https://maps.google.com/?q=Aga+Khan+Palace+Pune" target="_blank" class="outline-action-link">Google Maps</a>
-                            <button type="button" class="solid-action-btn" onclick="openPassModal('Aga Khan Palace')">Book</button>
-                        </div>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Pune Jn (5 km)</span><span>🚌 <b>Bus:</b> Yerwada (0.4 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Aga+Khan+Palace+Pune" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Aga Khan Palace')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="heritage" data-name="Pataleshwar Cave Temple Rock Cut">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=600" alt="Pataleshwar Caves"><span class="tag-badge heritage">Heritage</span><button type="button" class="btn-fav" onclick="toggleFavorite('Pataleshwar Rock Caves', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Pataleshwar Rock Caves</h3><span class="feasibility-badge ideal">🟢 Open • City Heritage</span></div>
+                        <p>8th-century Rashtrakuta-era monolithic rock-cut cave temple dedicated to Lord Shiva, carved from a single basaltic rock.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Shivaji Nagar (1.2 km)</span><span>🚌 <b>Bus:</b> JM Road (0.2 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Pataleshwar+Cave+Temple+Pune" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Pataleshwar Rock Caves')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="heritage" data-name="Lal Mahal Shivaji Maharaj Heritage">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1596176530529-78163a4f7af2?w=600" alt="Lal Mahal"><span class="tag-badge heritage">Heritage</span><button type="button" class="btn-fav" onclick="toggleFavorite('Lal Mahal', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Lal Mahal</h3><span class="feasibility-badge ideal">🟢 Open • Museum Tour</span></div>
+                        <p>Historic red palace rebuilt in honor of Chhatrapati Shivaji Maharaj's early childhood residence and daring exploits.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Pune Jn (3 km)</span><span>🚌 <b>Bus:</b> Shaniwar Wada (0.1 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Lal+Mahal+Pune" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Lal Mahal')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="heritage" data-name="Vishrambaug Wada Maratha Woodwork">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1571401835393-8c5f35328320?w=600" alt="Vishrambaug Wada"><span class="tag-badge heritage">Heritage</span><button type="button" class="btn-fav" onclick="toggleFavorite('Vishrambaug Wada', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Vishrambaug Wada</h3><span class="feasibility-badge ideal">🟢 Open • Heritage Walk</span></div>
+                        <p>Exquisite three-storey mansion built by Peshwa Bajirao II, featuring intricately carved teakwood columns and balconies.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Pune Jn (4 km)</span><span>🚌 <b>Bus:</b> Bajirao Road (0.2 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Vishrambaug+Wada+Pune" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Vishrambaug Wada')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="heritage" data-name="Karla Caves Buddhist Rock Cut">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1626014303757-6467323869b3?w=600" alt="Karla Caves"><span class="tag-badge heritage">Heritage</span><button type="button" class="btn-fav" onclick="toggleFavorite('Karla Ancient Caves', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Karla Ancient Caves</h3><span class="feasibility-badge ideal">🟢 Open • Ancient Stupa</span></div>
+                        <p>Ancient Buddhist rock-cut shrines featuring India's largest rock-hewn Chaityagriha prayer hall with vaulted wooden ribs.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Malavli (5 km)</span><span>🚌 <b>Bus:</b> Karla Phata (2 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Karla+Caves+Lonavala" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Karla Ancient Caves')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="heritage" data-name="Bhaja Caves Monolithic Stupas">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600" alt="Bhaja Caves"><span class="tag-badge heritage">Heritage</span><button type="button" class="btn-fav" onclick="toggleFavorite('Bhaja Buddhist Caves', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Bhaja Buddhist Caves</h3><span class="feasibility-badge ideal">🟢 Open • 2nd Century BCE</span></div>
+                        <p>Cluster of 22 rock-cut Buddhist caves from the 2nd century BCE, featuring a graveyard of 14 monolithic stone stupas.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Malavli (3 km)</span><span>🚌 <b>Bus:</b> Bhaja Stop (0.8 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Bhaja+Caves+Malavli" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Bhaja Buddhist Caves')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="heritage" data-name="Bhor Rajwada Royal Palace">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600" alt="Bhor Rajwada"><span class="tag-badge heritage">Heritage</span><button type="button" class="btn-fav" onclick="toggleFavorite('Bhor Rajwada Palace', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Bhor Rajwada Palace</h3><span class="feasibility-badge ideal">🟢 Open • Film Location</span></div>
+                        <p>A princely heritage estate in Bhor displaying Maratha and Gothic architecture; heavily featured in period cinema.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Shirwal (28 km)</span><span>🚌 <b>Bus:</b> Bhor ST (0.5 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Bhor+Rajwada+Maharashtra" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Bhor Rajwada Palace')">Book</button></div>
+                    </div>
+                </article>
+
+                <!-- 2. FORTS & TREKS -->
+                <article class="place-card" data-category="trek" data-name="Torna Fort Prachandagad">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=600" alt="Torna Fort"><span class="tag-badge trek">Trek</span><button type="button" class="btn-fav" onclick="toggleFavorite('Torna Fort', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Torna Fort (Prachandagad)</h3><span class="feasibility-badge caution">🟡 Steep Ridge Winds</span></div>
+                        <p>Highest hill-fort in Pune district; sheer drop-offs and vast stone perimeter walls.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Pune Jn (52 km)</span><span>🚌 <b>Bus:</b> Velhe ST (3 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Torna+Fort+Velhe" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Torna Fort')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="trek" data-name="Rajgad Fort Citadel">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1571401835393-8c5f35328320?w=600" alt="Rajgad Fort"><span class="tag-badge trek">Trek</span><button type="button" class="btn-fav" onclick="toggleFavorite('Rajgad Fort', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Rajgad Fort Citadel</h3><span class="feasibility-badge ideal">🟢 Open • Historic Capital</span></div>
+                        <p>Maratha imperial headquarters for over 25 years with double-fortified bastions.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Pune Jn (58 km)</span><span>🚌 <b>Bus:</b> Gunjavane (1 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Rajgad+Fort+Pune" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Rajgad Fort')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="trek" data-name="Lohagad Fort Iron Fort">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1596176530529-78163a4f7af2?w=600" alt="Lohagad Fort"><span class="tag-badge trek">Trek</span><button type="button" class="btn-fav" onclick="toggleFavorite('Lohagad Fort', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Lohagad Fort</h3><span class="feasibility-badge ideal">🟢 Open • Family Easy Trek</span></div>
+                        <p>The iconic Iron Fort with carved steps and the Scorpion's Tail ridge walk.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Malavli (6 km)</span><span>🚌 <b>Bus:</b> Bhaja Stop (4 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Lohagad+Fort+Lonavala" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Lohagad Fort')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="trek" data-name="Visapur Fort Staircase">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1518457607834-6e8d80c183c5?w=600" alt="Visapur Fort"><span class="tag-badge trek">Trek</span><button type="button" class="btn-fav" onclick="toggleFavorite('Visapur Fort', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Visapur Fort</h3><span class="feasibility-badge caution">🟡 Wet Waterfall Steps</span></div>
+                        <p>Famed for climbing directly up cascading waterfall steps during monsoon.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Malavli (7 km)</span><span>🚌 <b>Bus:</b> Malavli ST (7 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Visapur+Fort+Malavli" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Visapur Fort')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="trek" data-name="Tikona Fort Vitandgad">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600" alt="Tikona Fort"><span class="tag-badge trek">Trek</span><button type="button" class="btn-fav" onclick="toggleFavorite('Tikona Fort', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Tikona Fort (Vitandgad)</h3><span class="feasibility-badge ideal">🟢 Open • Lake Viewpoint</span></div>
+                        <p>Pyramidal hill-fort overlooking Pawna lake with vertical rock-cut stairs.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Kamshet (14 km)</span><span>🚌 <b>Bus:</b> Tikona Peth (1 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Tikona+Fort+Kamshet" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Tikona Fort')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="trek" data-name="Tung Fort Kathingad">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1626014303757-6467323869b3?w=600" alt="Tung Fort"><span class="tag-badge trek">Trek</span><button type="button" class="btn-fav" onclick="toggleFavorite('Tung Fort', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Tung Fort (Kathingad)</h3><span class="feasibility-badge caution">🟡 Narrow Summit Ridge</span></div>
+                        <p>Conic needle-shaped fortress surrounded by the waters of Pawna Dam reservoir.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Lonavala (24 km)</span><span>🚌 <b>Bus:</b> Ghonshet (2 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Tung+Fort+Maharashtra" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Tung Fort')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="trek" data-name="Purandar Fort Vajragad">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=600" alt="Purandar Fort"><span class="tag-badge trek">Trek</span><button type="button" class="btn-fav" onclick="toggleFavorite('Purandar Fort', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Purandar Fort</h3><span class="feasibility-badge ideal">🟢 Open • ID Required</span></div>
+                        <p>Birthplace of Chhatrapati Sambhaji Maharaj with sprawling twin ridge walls.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Saswad Rd (30 km)</span><span>🚌 <b>Bus:</b> Saswad ST (15 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Purandar+Fort+Saswad" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Purandar Fort')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="trek" data-name="Koraigad Fort Amby Valley">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600" alt="Koraigad Fort"><span class="tag-badge trek">Trek</span><button type="button" class="btn-fav" onclick="toggleFavorite('Koraigad Fort', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Koraigad Fort</h3><span class="feasibility-badge ideal">🟢 Open • Flat Walking Wall</span></div>
+                        <p>Flat plateau fort with fully intact perimeter walls and freshwater ponds.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Lonavala (22 km)</span><span>🚌 <b>Bus:</b> Peth Shahpur (1 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Koraigad+Fort+Lonavala" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Koraigad Fort')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="trek" data-name="Raireshwar Plateau Swarajya Oath">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=600" alt="Raireshwar"><span class="tag-badge trek">Trek</span><button type="button" class="btn-fav" onclick="toggleFavorite('Raireshwar Plateau', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Raireshwar Plateau</h3><span class="feasibility-badge ideal">🟢 Open • Multi-Hued Soil</span></div>
+                        <p>The sacred spot of the Swarajya oath taken by Shivaji Maharaj in 1645.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Satara Stn (75 km)</span><span>🚌 <b>Bus:</b> Korle Village (3 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Raireshwar+Plateau+Bhor" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Raireshwar Plateau')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="trek" data-name="Rohida Fort Vichitragad Bhor">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1596176530529-78163a4f7af2?w=600" alt="Rohida Fort"><span class="tag-badge trek">Trek</span><button type="button" class="btn-fav" onclick="toggleFavorite('Rohida Fort', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Rohida Fort</h3><span class="feasibility-badge ideal">🟢 Open • High Wind Gate</span></div>
+                        <p>High-velocity winds, fortified gates, and cliff views over Bhor valleys.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Shirwal (25 km)</span><span>🚌 <b>Bus:</b> Bhor ST (10 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Rohida+Fort+Bhor" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Rohida Fort')">Book</button></div>
+                    </div>
+                </article>
+
+                <!-- 3. DAMS -->
+                <article class="place-card" data-category="dam" data-name="Khadakwasla Dam">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600" alt="Khadakwasla Dam"><span class="tag-badge dam">Dam</span><button type="button" class="btn-fav" onclick="toggleFavorite('Khadakwasla Dam', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Khadakwasla Dam</h3><span class="feasibility-badge ideal">🟢 Open • Sunset Promenade</span></div>
+                        <p>Pune’s most popular evening breeze and roasted bhutta hangout spot.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Pune Jn (16 km)</span><span>🚌 <b>Bus:</b> Khadakwasla (0.5 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Khadakwasla+Dam+Pune" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Khadakwasla Dam')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="dam" data-name="Panshet Dam Tanajisagar">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600" alt="Panshet Dam"><span class="tag-badge dam">Dam</span><button type="button" class="btn-fav" onclick="toggleFavorite('Panshet Dam', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Panshet Dam</h3><span class="feasibility-badge ideal">🟢 Watersports Open</span></div>
+                        <p>Massive reservoir with kayaking, speed boats, and green shorelines.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Pune Jn (44 km)</span><span>🚌 <b>Bus:</b> Panshet Stand (1 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Panshet+Dam+Pune" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Panshet Dam')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="dam" data-name="Varasgaon Dam Veer Baaji">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600" alt="Varasgaon Dam"><span class="tag-badge dam">Dam</span><button type="button" class="btn-fav" onclick="toggleFavorite('Varasgaon Dam', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Varasgaon Dam</h3><span class="feasibility-badge ideal">🟢 Open • Valley Drive</span></div>
+                        <p>Forest catchment adjacent to Panshet with scenic winding rural roads.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Pune Jn (46 km)</span><span>🚌 <b>Bus:</b> Varasgaon (1.5 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Varasgaon+Dam+Maharashtra" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Varasgaon Dam')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="dam" data-name="Mulshi Dam Tata Power">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?w=600" alt="Mulshi Dam"><span class="tag-badge dam">Dam</span><button type="button" class="btn-fav" onclick="toggleFavorite('Mulshi Dam', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Mulshi Dam</h3><span class="feasibility-badge ideal">🟢 Monsoon Mist Overlook</span></div>
+                        <p>Hydroelectric power dam enclosed by mist-laden peaks and luxury resorts.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Pune Jn (48 km)</span><span>🚌 <b>Bus:</b> Mulshi Stop (2 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Mulshi+Dam+Pune" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Mulshi Dam')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="dam" data-name="Bhatghar Dam Lloyd Dam Bhor">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600" alt="Bhatghar Dam"><span class="tag-badge dam">Dam</span><button type="button" class="btn-fav" onclick="toggleFavorite('Bhatghar Dam', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Bhatghar Dam</h3><span class="feasibility-badge ideal">🟢 Open • Garden Walks</span></div>
+                        <p>One of the oldest stone-masonry dams in India with manicured garden banks.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Shirwal (30 km)</span><span>🚌 <b>Bus:</b> Bhor Stand (5 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Bhatghar+Dam+Bhor" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Bhatghar Dam')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="dam" data-name="Temghar Dam Lavasa Road">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600" alt="Temghar Dam"><span class="tag-badge dam">Dam</span><button type="button" class="btn-fav" onclick="toggleFavorite('Temghar Dam', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Temghar Dam</h3><span class="feasibility-badge ideal">🟢 Open • Spillway View</span></div>
+                        <p>Valley dam on the way to Lavasa featuring massive overflow towers.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Pune Jn (40 km)</span><span>🚌 <b>Bus:</b> Pirangut (15 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Temghar+Dam+Maharashtra" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Temghar Dam')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="dam" data-name="Chaskaman Dam Khed">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600" alt="Chaskaman Dam"><span class="tag-badge dam">Dam</span><button type="button" class="btn-fav" onclick="toggleFavorite('Chaskaman Dam', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Chaskaman Dam</h3><span class="feasibility-badge ideal">🟢 Open • Quiet Shores</span></div>
+                        <p>Peaceful irrigation reservoir on the Bhima river free from tourist crowds.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Pune Jn (65 km)</span><span>🚌 <b>Bus:</b> Rajgurunagar (14 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Chaskaman+Dam+Khed" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Chaskaman Dam')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="dam" data-name="Veer Dam Shirwal Birding">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=600" alt="Veer Dam"><span class="tag-badge dam">Dam</span><button type="button" class="btn-fav" onclick="toggleFavorite('Veer Dam Sanctuary', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Veer Dam Sanctuary</h3><span class="feasibility-badge ideal">🟢 Open • Migratory Birds</span></div>
+                        <p>Birdwatching hotspot on the Nira river hosting painted storks and geese.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Shirwal (18 km)</span><span>🚌 <b>Bus:</b> Shirwal (12 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Veer+Dam+Shirwal" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Veer Dam Sanctuary')">Book</button></div>
+                    </div>
+                </article>
+
+                <!-- 4. LAKES -->
+                <article class="place-card" data-category="lake" data-name="Kasarsai Dam Lake">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?w=600" alt="Kasarsai Lake"><span class="tag-badge lake">Lake</span><button type="button" class="btn-fav" onclick="toggleFavorite('Kasarsai Reservoir Lake', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Kasarsai Reservoir</h3><span class="feasibility-badge ideal">🟢 Open</span></div>
+                        <p>Boating, floating restaurants, and sunset views near Hinjawadi IT Park.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Akurdi (14 km)</span><span>🚌 <b>Bus:</b> Kasarsai Phata (1 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Kasarsai+Dam+Pune" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Kasarsai Reservoir Lake')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="lake" data-name="Uksan Lake Kamshet">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=600" alt="Uksan Lake"><span class="tag-badge lake">Lake</span><button type="button" class="btn-fav" onclick="toggleFavorite('Uksan Lake', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Uksan Lake</h3><span class="feasibility-badge ideal">🟢 Open</span></div>
+                        <p>Unspoiled freshwater body hidden behind Kamshet; prime campsite terrain.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Kamshet (12 km)</span><span>🚌 <b>Bus:</b> Kamshet ST (12 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Uksan+Lake+Kamshet" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Uksan Lake')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="lake" data-name="Vadivale Lake Kamshet">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600" alt="Vadivale Lake"><span class="tag-badge lake">Lake</span><button type="button" class="btn-fav" onclick="toggleFavorite('Vadivale Lake', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Vadivale Lake</h3><span class="feasibility-badge ideal">🟢 Open</span></div>
+                        <p>Backwater lake flanked by homestays, strawberry patches, and fishing piers.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Kamshet (9 km)</span><span>🚌 <b>Bus:</b> Vadivale Phata (2 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Vadivale+Lake+Kamshet" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Vadivale Lake')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="lake" data-name="Hadshi Lake Grounds">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600" alt="Hadshi Lake"><span class="tag-badge lake">Lake</span><button type="button" class="btn-fav" onclick="toggleFavorite('Hadshi Lake Grounds', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Hadshi Lake Grounds</h3><span class="feasibility-badge ideal">🟢 Open</span></div>
+                        <p>Manicured campus and spiritual garden complex overlooking calm waters.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Pune Jn (45 km)</span><span>🚌 <b>Bus:</b> Hadshi Gate (0.2 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Hadshi+Temple+Pune" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Hadshi Lake Grounds')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="lake" data-name="Pashan Lake Sanctuary">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600" alt="Pashan Lake"><span class="tag-badge lake">Lake</span><button type="button" class="btn-fav" onclick="toggleFavorite('Pashan Lake Walkway', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Pashan Lake Walkway</h3><span class="feasibility-badge ideal">🟢 Open</span></div>
+                        <p>Urban nature reserve inside Pune with paved nature walking boardwalks.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Shivaji Nagar (8 km)</span><span>🚌 <b>Bus:</b> Pashan Circle (0.5 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Pashan+Lake+Pune" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Pashan Lake Walkway')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="lake" data-name="Mastani Lake Dive Ghat">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=600" alt="Mastani Lake"><span class="tag-badge lake">Lake</span><button type="button" class="btn-fav" onclick="toggleFavorite('Mastani Lake', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Mastani Lake (Wadki)</h3><span class="feasibility-badge ideal">🟢 Open</span></div>
+                        <p>Centuries-old stone water body nestled below Dive Ghat pass hills.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Saswad Rd (12 km)</span><span>🚌 <b>Bus:</b> Wadki (1 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Mastani+Lake+Wadki" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Mastani Lake')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="lake" data-name="Manas Lake Bhugaon">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?w=600" alt="Manas Lake"><span class="tag-badge lake">Lake</span><button type="button" class="btn-fav" onclick="toggleFavorite('Manas Lake', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Manas Lake (Bhugaon)</h3><span class="feasibility-badge ideal">🟢 Open</span></div>
+                        <p>Lakeside dining strip, evening pedal boats, and cool suburban breezes.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Pune Jn (18 km)</span><span>🚌 <b>Bus:</b> Bhugaon (0.4 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Manas+Lake+Bhugaon" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Manas Lake')">Book</button></div>
+                    </div>
+                </article>
+
+                <!-- 5. WATERFALLS -->
+                <article class="place-card" data-category="waterfall" data-name="Kataldhar Waterfall Lonavala">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1518457607834-6e8d80c183c5?w=600" alt="Kataldhar Falls"><span class="tag-badge waterfall">Waterfall</span><button type="button" class="btn-fav" onclick="toggleFavorite('Kataldhar Canyon Falls', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Kataldhar Canyon Falls</h3><span class="feasibility-badge caution">🟡 Forest Descent</span></div>
+                        <p>Giant horseshoe canyon waterfall hidden deep inside Rajmachi forest.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Lonavala (9 km)</span><span>🚌 <b>Bus:</b> Fanasrai (2 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Kataldhar+Waterfall+Lonavala" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Kataldhar Canyon Falls')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="waterfall" data-name="Madhe Ghat Waterfall Bhor">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?w=600" alt="Madhe Ghat"><span class="tag-badge waterfall">Waterfall</span><button type="button" class="btn-fav" onclick="toggleFavorite('Madhe Ghat Plunge', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Madhe Ghat Plunge</h3><span class="feasibility-badge caution">🟡 Slippery Rocks</span></div>
+                        <p>High edge cliff dropping thousands of feet down into the Konkan plains.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Pune Jn (68 km)</span><span>🚌 <b>Bus:</b> Kelad (1.5 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Madhe+Ghat+Waterfall" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Madhe Ghat Plunge')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="waterfall" data-name="Tamhini Valley Waterfalls">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1518457607834-6e8d80c183c5?w=600" alt="Tamhini Falls"><span class="tag-badge waterfall">Waterfall</span><button type="button" class="btn-fav" onclick="toggleFavorite('Tamhini Roadside Cascades', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Tamhini Cascades</h3><span class="feasibility-badge ideal">🟢 Open</span></div>
+                        <p>Dozens of gushing mountain torrents right beside the ghat road.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Mangaon (45 km)</span><span>🚌 <b>Bus:</b> Dongarwadi (0.5 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Tamhini+Ghat+Waterfalls" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Tamhini Roadside Cascades')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="waterfall" data-name="Kune Falls Khandala">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?w=600" alt="Kune Falls"><span class="tag-badge waterfall">Waterfall</span><button type="button" class="btn-fav" onclick="toggleFavorite('Kune Falls Khandala', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Kune Falls Khandala</h3><span class="feasibility-badge ideal">🟢 Open</span></div>
+                        <p>Three-tiered 200m waterfall surrounded by lush green cliff sides.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Khandala (3 km)</span><span>🚌 <b>Bus:</b> Kune Church (0.5 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Kune+Falls+Khandala" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Kune Falls Khandala')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="waterfall" data-name="Kalu Waterfall Malshej">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1518457607834-6e8d80c183c5?w=600" alt="Kalu Waterfall"><span class="tag-badge waterfall">Waterfall</span><button type="button" class="btn-fav" onclick="toggleFavorite('Kalu Canyon Waterfall', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Kalu Canyon Waterfall</h3><span class="feasibility-badge restricted">🔴 Flood Risk</span></div>
+                        <p>Largest, most thunderous 5-stage cascade in the Malshej region.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Kalyan (90 km)</span><span>🚌 <b>Bus:</b> Khireshwar (4 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Kalu+Waterfall+Malshej" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Kalu Canyon Waterfall')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="waterfall" data-name="Zenith Waterfall Khopoli">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?w=600" alt="Zenith Falls"><span class="tag-badge waterfall">Waterfall</span><button type="button" class="btn-fav" onclick="toggleFavorite('Zenith Waterfall', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Zenith Waterfall</h3><span class="feasibility-badge ideal">🟢 Open</span></div>
+                        <p>Fun family monsoon splash reachable by a 20-minute stream walk.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Khopoli (2.5 km)</span><span>🚌 <b>Bus:</b> Khopoli Stand (3 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Zenith+Waterfall+Khopoli" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Zenith Waterfall')">Book</button></div>
+                    </div>
+                </article>
+
+                <!-- 6. HILL STATIONS -->
+                <article class="place-card" data-category="hill" data-name="Lonavala Tiger Point Khandala">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600" alt="Tiger Point"><span class="tag-badge hill">Hill Point</span><button type="button" class="btn-fav" onclick="toggleFavorite('Tiger Point', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Tiger's Leap & Lion Point</h3><span class="feasibility-badge ideal">🟢 Open</span></div>
+                        <p>650m sheer drop cliffs with upward wind drafts and cloud tunnels.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Lonavala (11 km)</span><span>🚌 <b>Bus:</b> INS Shivaji (3 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Tiger+Point+Lonavala" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Tiger Point')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="hill" data-name="Panchgani Table Land Plateau">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=600" alt="Panchgani"><span class="tag-badge hill">Hill Station</span><button type="button" class="btn-fav" onclick="toggleFavorite('Panchgani Table Land', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Panchgani Table Land</h3><span class="feasibility-badge ideal">🟢 Open</span></div>
+                        <p>Second longest mountain volcanic plateau in Asia with mountain breezes.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Wathar (46 km)</span><span>🚌 <b>Bus:</b> Panchgani ST (2 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Table+Land+Panchgani" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Panchgani Table Land')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="hill" data-name="Mahabaleshwar Arthur Seat">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600" alt="Mahabaleshwar"><span class="tag-badge hill">Hill Station</span><button type="button" class="btn-fav" onclick="toggleFavorite('Mahabaleshwar Hills', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Mahabaleshwar Hills</h3><span class="feasibility-badge ideal">🟢 Open</span></div>
+                        <p>Queen of Sahyadris famous for viewpoints, strawberry farms, and woods.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Satara (65 km)</span><span>🚌 <b>Bus:</b> Mahabaleshwar (1 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Arthur+Seat+Mahabaleshwar" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Mahabaleshwar Hills')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="hill" data-name="Matheran Eco Hill Station">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=600" alt="Matheran"><span class="tag-badge hill">Hill Station</span><button type="button" class="btn-fav" onclick="toggleFavorite('Matheran Eco Ridge', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Matheran Eco Ridge</h3><span class="feasibility-badge ideal">🟢 Open</span></div>
+                        <p>Asia's only vehicle-free hill station with red clay paths and toy train tracks.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Neral (12 km)</span><span>🚌 <b>Bus:</b> Dasturi Naka (1 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Matheran+Hill+Station" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Matheran Eco Ridge')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="hill" data-name="Bhimashankar Wildlife Sanctuary">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600" alt="Bhimashankar"><span class="tag-badge hill">Hill Station</span><button type="button" class="btn-fav" onclick="toggleFavorite('Bhimashankar Forest', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Bhimashankar Forest</h3><span class="feasibility-badge ideal">🟢 Open</span></div>
+                        <p>Dense rainforest sanctuary, home to the Shekru and ancient Jyotirlinga.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Pune Jn (110 km)</span><span>🚌 <b>Bus:</b> Bhimashankar (0.2 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Bhimashankar+Temple" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Bhimashankar Forest')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="hill" data-name="Vetal Tekdi ARAI Hill Pune">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=600" alt="Vetal Tekdi"><span class="tag-badge hill">City Hill</span><button type="button" class="btn-fav" onclick="toggleFavorite('Vetal Tekdi', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Vetal Tekdi & ARAI</h3><span class="feasibility-badge ideal">🟢 Open</span></div>
+                        <p>Highest natural point in Pune city limits; popular for sunrise walks.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Shivaji Nagar (5 km)</span><span>🚌 <b>Bus:</b> Paud Phata (1.5 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Vetal+Tekdi+Pune" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Vetal Tekdi')">Book</button></div>
+                    </div>
+                </article>
+
+                <!-- 7. RIDE ROADS -->
+                <article class="place-card" data-category="ride" data-name="Dive Ghat Saswad Road">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600" alt="Dive Ghat"><span class="tag-badge ride">Bike Road</span><button type="button" class="btn-fav" onclick="toggleFavorite('Dive Ghat Ridge Road', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Dive Ghat Ridge Road</h3><span class="feasibility-badge ideal">🟢 Open</span></div>
+                        <p>Sweeping hairpins overlooking Mastani lake; top choice for sunrise rides.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Saswad Rd (12 km)</span><span>🚌 <b>Bus:</b> Wadki Naka (1 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Dive+Ghat+Maharashtra" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Dive Ghat Ridge Road')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="ride" data-name="Varandha Ghat Wilderness Highway">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600" alt="Varandha Ghat"><span class="tag-badge ride">Long Drive</span><button type="button" class="btn-fav" onclick="toggleFavorite('Varandha Ghat Highway', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Varandha Ghat Highway</h3><span class="feasibility-badge caution">🟡 Narrow Pass</span></div>
+                        <p>Dramatic mountain pass cutting through sheer rock faces toward Konkan.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Veer Stn (38 km)</span><span>🚌 <b>Bus:</b> Bhor ST (35 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Varandha+Ghat+Road" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Varandha Ghat Highway')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="ride" data-name="Malshej Ghat NH61 Mist Pass">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1518457607834-6e8d80c183c5?w=600" alt="Malshej Ghat"><span class="tag-badge ride">Highway Ride</span><button type="button" class="btn-fav" onclick="toggleFavorite('Malshej Ghat Pass', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Malshej Ghat Pass</h3><span class="feasibility-badge caution">🟡 Dense Mist</span></div>
+                        <p>Cliffside touring route where waterfall spray lands directly on vehicles.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Kalyan (85 km)</span><span>🚌 <b>Bus:</b> MTDC Malshej (1 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Malshej+Ghat+NH61" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Malshej Ghat Pass')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="ride" data-name="Panshet Ghol Loop Ride">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600" alt="Panshet Loop"><span class="tag-badge ride">Backwater Ride</span><button type="button" class="btn-fav" onclick="toggleFavorite('Panshet-Ghol Loop', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Panshet-Ghol Loop</h3><span class="feasibility-badge ideal">🟢 Open</span></div>
+                        <p>A quiet single-lane tarmac run hugging reservoir edges behind Sinhagad.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Pune Jn (46 km)</span><span>🚌 <b>Bus:</b> Panshet Dam (2 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Panshet+Dam+Water+Sports" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Panshet-Ghol Loop')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="ride" data-name="Old Mumbai Pune Highway Khandala">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600" alt="Old NH48"><span class="tag-badge ride">Cruiser Road</span><button type="button" class="btn-fav" onclick="toggleFavorite('Old NH48 Khandala', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Old Mumbai-Pune Highway</h3><span class="feasibility-badge ideal">🟢 Open</span></div>
+                        <p>Classic Khandala ghat twisties popular for Sunday early morning breakfast runs.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Khandala (2 km)</span><span>🚌 <b>Bus:</b> Khopoli ST (8 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Old+Mumbai+Pune+Highway" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Old NH48 Khandala')">Book</button></div>
+                    </div>
+                </article>
+
+                <article class="place-card" data-category="ride" data-name="Chalkewadi Windmill Plateau Drive">
+                    <div class="card-img-wrap"><img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600" alt="Chalkewadi"><span class="tag-badge ride">Open Plateau</span><button type="button" class="btn-fav" onclick="toggleFavorite('Chalkewadi Plateau', this)">🤍</button></div>
+                    <div class="card-body">
+                        <div class="card-header-row"><h3>Chalkewadi Plateau</h3><span class="feasibility-badge ideal">🟢 Open</span></div>
+                        <p>Hundreds of towering wind turbines spanning surreal red laterite roads.</p>
+                        <div class="card-transit-info"><span>🚆 <b>Rail:</b> Satara (30 km)</span><span>🚌 <b>Bus:</b> Thoseghar (5 km)</span></div>
+                        <div class="card-action-row"><a href="https://maps.google.com/?q=Chalkewadi+Windmill+Farm" target="_blank" class="btn-map">📍 Google Maps</a><button type="button" class="btn-book-card" onclick="openBookingModal('Chalkewadi Plateau')">Book</button></div>
                     </div>
                 </article>
             </div>
 
-            <div id="noMatchesText" class="empty-state-notice hidden">
-                <p>⚠️ No matching locations found. Try searching for "heritage", "trek", or "dam".</p>
+            <div id="noResults" class="no-results hidden">
+                <p>⚠️ No matching locations found. Try searching for "heritage", "trek", "dam", "ride", or "waterfall".</p>
             </div>
         </section>
 
-        <!-- Trip Calculator Section -->
-        <section id="budget" class="content-block">
-            <div class="section-title-wrap">
-                <div class="badge-mini">🧮 Custom Mileage & Fuel Planner</div>
-                <h2 class="main-heading">Estimate Your Expedition Budget</h2>
-                <p class="sub-heading">Choose your vehicle, set your real mileage & local fuel price, and calculate exact fuel litres and trip expenses.</p>
+        <!-- Upgraded Trip Budget & Mileage Calculator Section -->
+        <section id="budget-calculator" class="section-container">
+            <div class="section-header-wrap">
+                <div class="badge-map">🧮 Custom Mileage & Fuel Planner</div>
+                <h2 class="section-heading">Estimate Your Expedition Budget</h2>
+                <p class="section-subheading">Choose your vehicle, set your real mileage & local fuel price, and calculate exact fuel litres and trip expenses.</p>
             </div>
 
-            <div class="calculator-layout">
-                <div class="calculator-inputs">
-                    <div class="input-row-group">
-                        <label class="group-label">Transport Mode:</label>
-                        <div class="option-chips-wrap">
-                            <label class="selection-chip">
-                                <input type="radio" name="travelModeOption" value="bike" checked onchange="updateVehicleSettings()">
+            <div class="calc-wrapper">
+                <div class="calc-controls">
+                    <div class="calc-group">
+                        <label>Transport Mode:</label>
+                        <div class="calc-radio-group">
+                            <label class="calc-chip">
+                                <input type="radio" name="transMode" value="bike" checked onchange="handleTransportModeChange()">
                                 <span>🏍️ Motorcycle</span>
                             </label>
-                            <label class="selection-chip">
-                                <input type="radio" name="travelModeOption" value="car" onchange="updateVehicleSettings()">
+                            <label class="calc-chip">
+                                <input type="radio" name="transMode" value="car" onchange="handleTransportModeChange()">
                                 <span>🚗 Car / SUV</span>
                             </label>
-                            <label class="selection-chip">
-                                <input type="radio" name="travelModeOption" value="bus" onchange="updateVehicleSettings()">
+                            <label class="calc-chip">
+                                <input type="radio" name="transMode" value="bus" onchange="handleTransportModeChange()">
                                 <span>🚌 ST Bus / Public Transit</span>
                             </label>
                         </div>
                     </div>
 
-                    <div id="fuelSettingsArea" class="fuel-inputs-row">
-                        <div class="single-param-field">
-                            <label for="costPerLitre">Petrol / Fuel Price (₹ / Litre):</label>
-                            <div class="currency-entry-box">
-                                <span class="prefix">₹</span>
-                                <input type="number" id="costPerLitre" value="105" min="50" max="200" step="0.5" oninput="runBudgetMath()">
+                    <div id="fuelParamsRow" class="calc-dynamic-row">
+                        <div class="param-box">
+                            <label for="fuelPrice">Petrol / Fuel Price (₹ / Litre):</label>
+                            <div class="input-with-symbol">
+                                <span class="curr-sym">₹</span>
+                                <input type="number" id="fuelPrice" value="105" min="50" max="200" step="0.5" oninput="calculateBudget()">
                             </div>
                         </div>
-                        <div class="single-param-field">
-                            <label for="fuelEfficiency">Vehicle Mileage (km / Litre):</label>
-                            <div class="currency-entry-box">
-                                <span class="prefix">⚡</span>
-                                <input type="number" id="fuelEfficiency" value="45" min="5" max="90" step="1" oninput="runBudgetMath()">
+                        <div class="param-box">
+                            <label for="vehicleMileage">Vehicle Mileage (km / Litre):</label>
+                            <div class="input-with-symbol">
+                                <span class="curr-sym">⚡</span>
+                                <input type="number" id="vehicleMileage" value="45" min="5" max="90" step="1" oninput="calculateBudget()">
                             </div>
                         </div>
                     </div>
 
-                    <div id="busFareAlert" class="info-alert-box hidden">
+                    <div id="busFareNotice" class="bus-notice-box hidden">
                         <span>ℹ️ ST Bus fares are calculated at a standard ₹1.60 per kilometer per traveler.</span>
                     </div>
 
-                    <div class="input-row-group">
-                        <label class="group-label">Stay Type:</label>
-                        <div class="option-chips-wrap">
-                            <label class="selection-chip">
-                                <input type="radio" name="lodgingOption" value="daytrip" checked onchange="runBudgetMath()">
+                    <div class="calc-group">
+                        <label>Stay Type:</label>
+                        <div class="calc-radio-group">
+                            <label class="calc-chip">
+                                <input type="radio" name="stayTier" value="daytrip" checked onchange="calculateBudget()">
                                 <span>☀️ Same Day Return (₹0)</span>
                             </label>
-                            <label class="selection-chip">
-                                <input type="radio" name="lodgingOption" value="camp" onchange="runBudgetMath()">
+                            <label class="calc-chip">
+                                <input type="radio" name="stayTier" value="camp" onchange="calculateBudget()">
                                 <span>⛺ Lakeside Tent (₹800/person)</span>
                             </label>
-                            <label class="selection-chip">
-                                <input type="radio" name="lodgingOption" value="resort" onchange="runBudgetMath()">
+                            <label class="calc-chip">
+                                <input type="radio" name="stayTier" value="resort" onchange="calculateBudget()">
                                 <span>🏨 Agro Resort / Villa (₹2,200/person)</span>
                             </label>
                         </div>
                     </div>
 
-                    <div class="range-sliders-grid">
-                        <div class="slider-field">
-                            <label for="routeDistance">Round-Trip Distance: <b id="distanceReadout">60 km</b></label>
-                            <input type="range" id="routeDistance" min="20" max="300" step="10" value="60" oninput="runBudgetMath()">
+                    <div class="slider-row">
+                        <div class="slider-box">
+                            <label for="tripDist">Round-Trip Distance: <b id="distDisplay">60 km</b></label>
+                            <input type="range" id="tripDist" min="20" max="300" step="10" value="60" oninput="calculateBudget()">
                         </div>
-                        <div class="slider-field">
-                            <label for="groupSize">Number of Explorers: <b id="groupSizeReadout">2 Persons</b></label>
-                            <input type="range" id="groupSize" min="1" max="10" step="1" value="2" oninput="runBudgetMath()">
+                        <div class="slider-box">
+                            <label for="travelerCount">Number of Explorers: <b id="countDisplay">2 Persons</b></label>
+                            <input type="range" id="travelerCount" min="1" max="10" step="1" value="2" oninput="calculateBudget()">
                         </div>
                     </div>
                 </div>
 
-                <!-- Calculator Receipt -->
-                <div class="calculator-bill">
+                <div class="calc-receipt">
                     <h3>Estimated Expedition Cost</h3>
                     
-                    <div class="bill-line special-highlight">
-                        <span id="fuelUsageLabel">Estimated Fuel Consumption:</span>
-                        <b id="fuelQuantityDisplay">1.33 Litres</b>
+                    <div class="receipt-row highlight-fuel">
+                        <span id="fuelBurnLabel">Estimated Fuel Consumption:</span>
+                        <b id="fuelLitresDisplay">1.33 Litres</b>
                     </div>
 
-                    <div class="bill-line">
+                    <div class="receipt-row">
                         <span>Total Fuel / Transit Cost:</span>
-                        <span id="travelExpenseDisplay">₹140</span>
+                        <span id="transitCost">₹140</span>
                     </div>
-                    <div class="bill-line">
+                    <div class="receipt-row">
                         <span>Food & Local Dhaba Snacks:</span>
-                        <span id="mealExpenseDisplay">₹700</span>
+                        <span id="foodCost">₹700</span>
                     </div>
-                    <div class="bill-line">
+                    <div class="receipt-row">
                         <span>Lodging / Accommodation:</span>
-                        <span id="stayExpenseDisplay">₹0</span>
+                        <span id="stayCost">₹0</span>
                     </div>
-                    <div class="bill-line">
+                    <div class="receipt-row">
                         <span>Permits & Forest Passes:</span>
-                        <span id="passExpenseDisplay">₹100</span>
+                        <span id="permitCost">₹100</span>
                     </div>
-                    <hr class="bill-divider">
-                    <div class="bill-total-row">
+                    <hr>
+                    <div class="receipt-total">
                         <span>Total Estimated Budget:</span>
-                        <span id="overallBudgetDisplay" class="grand-total-amount">₹940</span>
+                        <span id="totalCost" class="total-price">₹940</span>
                     </div>
-                    <button type="button" class="submit-action-btn full-width" onclick="openPassModal('Calculated Budget Package')">Lock in This Trip</button>
+                    <button type="button" class="btn-primary full-width" onclick="openBookingModal('Calculated Budget Package')">Lock in This Trip</button>
                 </div>
+            </div>
+        </section>
+
+        <!-- Dynamic Comparison Matrix Section -->
+        <section id="matrix" class="section-container">
+            <div class="section-header-wrap">
+                <h2 class="section-heading">Circuit Comparison Matrix</h2>
+                <p class="section-subheading">Compare categories, distances, transit hubs, and ratings. You can also append more spots dynamically!</p>
+            </div>
+
+            <div class="table-add-controls">
+                <label for="customSpotSelect"><b>Add Destination to Matrix:</b></label>
+                <div class="add-control-row">
+                    <select id="customSpotSelect">
+                        <option value="Aga Khan Palace|Heritage Monument|5 km|Yerwada Bus (0.4 km)|All Year|⭐ 4.7">Aga Khan Palace</option>
+                        <option value="Pataleshwar Caves|Rock-cut Shrine|1.2 km|JM Road Stand (0.2 km)|All Year|⭐ 4.6">Pataleshwar Caves</option>
+                        <option value="Karla Ancient Caves|Buddhist Caves|65 km|Malavli Stn (5 km)|Oct - March|⭐ 4.7">Karla Ancient Caves</option>
+                        <option value="Torna Fort|Historic Trek|50 km|Velhe ST (3 km)|July - Feb|⭐ 4.8">Torna Fort</option>
+                        <option value="Rajgad Fort|Historic Citadel|55 km|Gunjavane (1 km)|Oct - Feb|⭐ 4.9">Rajgad Fort</option>
+                        <option value="Lohagad Fort|Iron Fort|60 km|Malavli Stn (6 km)|Monsoon/Winter|⭐ 4.6">Lohagad Fort</option>
+                        <option value="Mulshi Dam|Hydro Catchment|45 km|Mulshi Stop (2 km)|Monsoon|⭐ 4.7">Mulshi Dam</option>
+                        <option value="Kataldhar Falls|Canyon Waterfall|75 km|Lonavala (9 km)|Peak Monsoon|⭐ 4.8">Kataldhar Falls</option>
+                        <option value="Panchgani Table Land|Volcanic Plateau|100 km|Panchgani ST (2 km)|Sept - March|⭐ 4.7">Panchgani Table Land</option>
+                        <option value="Malshej Ghat Pass|Highway Pass|110 km|Kalyan (85 km)|Monsoon|⭐ 4.8">Malshej Ghat Pass</option>
+                    </select>
+                    <button type="button" class="btn-primary" onclick="addLocationToMatrix()">+ Add to Matrix</button>
+                </div>
+            </div>
+            
+            <div class="table-wrap">
+                <table class="styled-table" id="comparisonTable">
+                    <thead>
+                        <tr>
+                            <th>Circuit / Route</th>
+                            <th>Category</th>
+                            <th>Distance</th>
+                            <th>Nearest Transit Hub</th>
+                            <th>Best Window</th>
+                            <th>Rating</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="comparisonTableBody">
+                        <tr>
+                            <td><b>Sinhagad Fort Trail</b></td>
+                            <td>Historic Trek</td>
+                            <td>30 km</td>
+                            <td>Swargate Bus (28 km)</td>
+                            <td>July - February</td>
+                            <td>⭐ 4.8</td>
+                            <td><button class="btn-row-del" onclick="removeRow(this)">✕</button></td>
+                        </tr>
+                        <tr>
+                            <td><b>Shaniwar Wada</b></td>
+                            <td>Heritage Monument</td>
+                            <td>Pune City</td>
+                            <td>Shivaji Nagar (2.5 km)</td>
+                            <td>All Year</td>
+                            <td>⭐ 4.6</td>
+                            <td><button class="btn-row-del" onclick="removeRow(this)">✕</button></td>
+                        </tr>
+                        <tr>
+                            <td><b>Tamhini Mountain Pass</b></td>
+                            <td>Bike / Car Ride</td>
+                            <td>70 km</td>
+                            <td>Mangaon Rail (48 km)</td>
+                            <td>June - October</td>
+                            <td>⭐ 4.9</td>
+                            <td><button class="btn-row-del" onclick="removeRow(this)">✕</button></td>
+                        </tr>
+                        <tr>
+                            <td><b>Pawna Backwaters</b></td>
+                            <td>Lakes & Camping</td>
+                            <td>55 km</td>
+                            <td>Kamshet Rail (18 km)</td>
+                            <td>October - March</td>
+                            <td>⭐ 4.7</td>
+                            <td><button class="btn-row-del" onclick="removeRow(this)">✕</button></td>
+                        </tr>
+                        <tr>
+                            <td><b>Devkund Hidden Plunge</b></td>
+                            <td>Waterfall Trek</td>
+                            <td>100 km</td>
+                            <td>Bhira Bus Stop (2 km)</td>
+                            <td>August - November</td>
+                            <td>⭐ 4.8</td>
+                            <td><button class="btn-row-del" onclick="removeRow(this)">✕</button></td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </section>
     </main>
 
-    <!-- Footer Component[cite: 2] -->
+    <!-- Footer Component Matching User Screenshot -->
     <footer class="site-footer">
-        <div class="footer-container">
-            <div class="footer-links-section">
+        <div class="footer-inner">
+            <div class="footer-col-links">
                 <h4>Quick links</h4>
-                <div class="footer-links-columns">
-                    <div class="footer-column">
+                <div class="links-subgrid">
+                    <div class="link-col">
                         <a href="#hero">Home</a>
                         <a href="#featured">Packages & Pricing</a>
-                        <a href="#budget">Contact Us</a>
+                        <a href="#budget-calculator">Contact Us</a>
                     </div>
-                    <div class="footer-column">
+                    <div class="link-col">
+                        <a href="#matrix">Site Pricing</a>
                         <a href="#explore">Book Now</a>
-                        <a href="#budget">Contact</a>
+                        <a href="#matrix">Contact</a>
                     </div>
                 </div>
             </div>
 
-            <div class="footer-newsletter-section">
+            <div class="footer-col-newsletter">
                 <h4>Newsletter</h4>
-                <div class="newsletter-field-box">
+                <div class="newsletter-input-box">
                     <input type="text" placeholder="Newsletter, sign up, or activity">
-                    <button type="button" class="newsletter-submit-btn">➤</button>
+                    <button type="button" class="btn-newsletter-send">➤</button>
                 </div>
             </div>
         </div>
 
-        <div class="footer-divider-line"></div>
+        <div class="footer-divider"></div>
 
-        <div class="footer-bottom-bar">
+        <div class="footer-bottom-row">
             <p>&copy; 2026 <b>TerraNova / Wanderlust</b>. All rights reserved.</p>
         </div>
     </footer>
 
-    <!-- Pass Registration Modal -->
-    <div id="passBookingModal" class="modal-backdrop hidden">
-        <div class="modal-dialog">
-            <button type="button" class="dismiss-modal-btn" onclick="closePassModal()">&times;</button>
-            <div class="modal-header-text">
-                <span class="modal-eyebrow">Direct Pass Reservation</span>
-                <h3 id="modalTargetTitle">Book Tour Pass</h3>
+    <!-- Booking Modal -->
+    <div id="bookingModal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <button type="button" class="btn-close-modal" onclick="closeBookingModal()">&times;</button>
+            <div class="modal-header">
+                <span class="badge">Direct Pass Reservation</span>
+                <h3 id="modalPlaceTitle">Book Tour Pass</h3>
                 <p>Register your verified entry pass or guided slot below.</p>
             </div>
             
-            <form class="booking-data-form" onsubmit="submitPassForm(event)">
-                <div class="form-field-group">
-                    <label for="chosenDestinationField">Selected Destination</label>
-                    <input type="text" id="chosenDestinationField" name="chosenDestination" readonly>
+            <form class="warm-form" onsubmit="handleModalSubmit(event)">
+                <div class="form-group">
+                    <label for="bookedPlace">Selected Destination</label>
+                    <input type="text" id="bookedPlace" name="bookedPlace" readonly>
                 </div>
 
-                <div class="form-two-column">
-                    <div class="form-field-group">
-                        <label for="travelerName">Your Full Name</label>
-                        <input type="text" id="travelerName" name="travelerName" placeholder="Swarnim Koratkar" required>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="userName">Your Full Name</label>
+                        <input type="text" id="userName" name="userName" placeholder="Swarnim Koratkar" required>
                     </div>
-                    <div class="form-field-group">
-                        <label for="travelerEmail">Email Address</label>
-                        <input type="email" id="travelerEmail" name="travelerEmail" placeholder="swarnim@example.com" required>
-                    </div>
-                </div>
-
-                <div class="form-two-column">
-                    <div class="form-field-group">
-                        <label for="visitDate">Date of Visit</label>
-                        <input type="date" id="visitDate" name="visitDate" required>
-                    </div>
-                    <div class="form-field-group">
-                        <label for="passAmount">Pass Count</label>
-                        <input type="number" id="passAmount" name="passAmount" min="1" max="15" value="1" required>
+                    <div class="form-group">
+                        <label for="userEmail">Email Address</label>
+                        <input type="email" id="userEmail" name="userEmail" placeholder="swarnim@example.com" required>
                     </div>
                 </div>
 
-                <button type="submit" class="submit-action-btn full-width">Confirm & Generate Digital Pass</button>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="passDate">Date of Visit</label>
+                        <input type="date" id="passDate" name="passDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="passCount">Pass Count</label>
+                        <input type="number" id="passCount" name="passCount" min="1" max="15" value="1" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary full-width">Confirm & Generate Digital Pass</button>
             </form>
         </div>
     </div>
 
-    <!-- Application Scripts -->
+    <!-- Leaflet.js Script -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- App Logic -->
     <script>
-        function handleSearchKey(event) {
+        // Theme Toggle Logic (Persists in localStorage)
+        function initTheme() {
+            const savedTheme = localStorage.getItem('terranova_theme') || 'dark';
+            applyTheme(savedTheme);
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.body.classList.contains('light-theme') ? 'light' : 'dark';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            applyTheme(newTheme);
+            localStorage.setItem('terranova_theme', newTheme);
+        }
+
+        function applyTheme(theme) {
+            const btnIcon = document.getElementById('themeIcon');
+            if (theme === 'light') {
+                document.body.classList.remove('dark-theme');
+                document.body.classList.add('light-theme');
+                btnIcon.innerText = '🌙';
+            } else {
+                document.body.classList.remove('light-theme');
+                document.body.classList.add('dark-theme');
+                btnIcon.innerText = '☀️';
+            }
+        }
+
+        // Leaflet Inbuilt Interactive Map Setup
+        const map = L.map('interactiveMap').setView([18.5204, 73.8567], 10);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        const featuredRadarData = {
+            sinhagad: {
+                name: "Sinhagad Fort Ridge",
+                lat: 18.3663, lng: 73.7558, zoom: 14,
+                lodges: [
+                    { name: "Wildernest Hilltop Resort", dist: "3.5 km", rating: "⭐ 4.6", type: "Resort" },
+                    { name: "Sinhagad Homestay", dist: "1.8 km", rating: "⭐ 4.4", type: "Rustic Lodge" }
+                ],
+                route: "Sinhagad Ghat Road"
+            },
+            shaniwarwada: {
+                name: "Shaniwar Wada Palace",
+                lat: 18.5196, lng: 73.8553, zoom: 16,
+                lodges: [
+                    { name: "Hotel Shreyas (Deccan)", dist: "2.1 km", rating: "⭐ 4.5", type: "Heritage Hotel" }
+                ],
+                route: "Bajirao Road & Shivaji Road Access"
+            },
+            tamhini: {
+                name: "Tamhini Ghat Pass",
+                lat: 18.4735, lng: 73.4357, zoom: 13,
+                lodges: [
+                    { name: "Tamhini Mist Nature Resort", dist: "2.0 km", rating: "⭐ 4.7", type: "Eco Resort" }
+                ],
+                route: "SH 60 / Kolad-Mulshi Highway"
+            },
+            pawna: {
+                name: "Pawna Lake Backwaters",
+                lat: 18.6853, lng: 73.4912, zoom: 13,
+                lodges: [
+                    { name: "Pawna Stargazing Camps", dist: "0.2 km", rating: "⭐ 4.7", type: "Waterfront Tent" }
+                ],
+                route: "Kamshet-Pawnanagar Single Road"
+            },
+            devkund: {
+                name: "Devkund Hidden Waterfall",
+                lat: 18.4552, lng: 73.3768, zoom: 13,
+                lodges: [
+                    { name: "Bhira Forest Homestay", dist: "2.5 km", rating: "⭐ 4.5", type: "Village Homestay" }
+                ],
+                route: "Bhira Dam Feeder Road"
+            },
+            lavasa: {
+                name: "Mutha Ghat & Lavasa Road",
+                lat: 18.4116, lng: 73.5074, zoom: 13,
+                lodges: [
+                    { name: "Waterfront Shaw Promenade", dist: "0.5 km", rating: "⭐ 4.3", type: "Apart-Hotel" }
+                ],
+                route: "Pirangut-Mutha Twisty Hill Road"
+            }
+        };
+
+        const markersMap = {};
+        for (const key in featuredRadarData) {
+            const data = featuredRadarData[key];
+            const marker = L.marker([data.lat, data.lng]).addTo(map);
+
+            let lodgeHtml = data.lodges.map(l => 
+                `<li><b>${l.name}</b> (${l.type})<br><small>📍 ${l.dist} away | ${l.rating}</small></li>`
+            ).join('');
+
+            const popupContent = `
+                <div class="custom-map-popup">
+                    <h4>📍 ${data.name}</h4>
+                    <p class="popup-road">🛣️ <b>Access:</b> ${data.route}</p>
+                    <hr>
+                    <p class="popup-lodge-title">🏨 <b>Nearby Hotels & Lodges:</b></p>
+                    <ul class="popup-lodge-list">${lodgeHtml}</ul>
+                </div>
+            `;
+            marker.bindPopup(popupContent);
+            markersMap[key] = marker;
+        }
+
+        function showOnInbuiltMap(key) {
+            const spot = featuredRadarData[key];
+            if (!spot) return;
+
+            document.getElementById('live-map-section').scrollIntoView({ behavior: 'smooth' });
+            setTimeout(() => {
+                map.flyTo([spot.lat, spot.lng], spot.zoom, { duration: 1.5 });
+                markersMap[key].openPopup();
+            }, 500);
+        }
+
+        function handleSearchKeyDown(event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
-                runSearch();
+                executeSearch();
             }
         }
 
-        function runSearch() {
-            const term = document.getElementById('destinationSearchInput').value.toLowerCase().trim();
-            if (!term) return;
+        function executeSearch() {
+            const query = document.getElementById('liveSearchBar').value.toLowerCase().trim();
+            if (query === '') return;
 
-            document.getElementById('searchFilterPill').classList.remove('hidden');
-            document.getElementById('queryLabel').innerText = `Search: "${term}"`;
+            showFilterBadge('Search: "' + query + '"');
+            document.querySelectorAll('.filter-pill').forEach(btn => btn.classList.remove('active'));
 
-            document.querySelectorAll('.filter-tab-btn').forEach(btn => btn.classList.remove('active'));
+            const grid = document.getElementById('destinationsGrid');
+            const hintBox = document.getElementById('initialStateMessage');
+            hintBox.classList.add('hidden');
+            grid.classList.remove('hidden');
 
-            const card = document.querySelector('.place-catalog-card');
-            const cardName = card.getAttribute('data-name').toLowerCase();
-            const cardCategory = card.getAttribute('data-category').toLowerCase();
-            const cardText = card.innerText.toLowerCase();
+            const cards = document.querySelectorAll('#destinationsGrid .place-card');
+            let visibleCount = 0;
 
-            const isMatch = cardName.includes(term) || cardCategory.includes(term) || cardText.includes(term);
-            card.style.display = isMatch ? 'flex' : 'none';
+            cards.forEach(card => {
+                const name = card.getAttribute('data-name').toLowerCase();
+                const category = card.getAttribute('data-category').toLowerCase();
+                const textContent = card.innerText.toLowerCase();
 
-            document.getElementById('noMatchesText').classList.toggle('hidden', isMatch);
+                if (name.includes(query) || category.includes(query) || textContent.includes(query)) {
+                    card.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            document.getElementById('noResults').classList.toggle('hidden', visibleCount > 0);
             document.getElementById('explore').scrollIntoView({ behavior: 'smooth' });
         }
 
-        function applyCategoryFilter(cat, btn) {
-            document.querySelectorAll('.filter-tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+        function filterCategory(category, buttonEl) {
+            document.querySelectorAll('.filter-pill').forEach(btn => btn.classList.remove('active'));
+            buttonEl.classList.add('active');
 
-            document.getElementById('destinationSearchInput').value = '';
-            document.getElementById('searchFilterPill').classList.remove('hidden');
-            document.getElementById('queryLabel').innerText = `Category: ${btn.innerText}`;
+            showFilterBadge('Category: ' + buttonEl.innerText);
 
-            const card = document.querySelector('.place-catalog-card');
-            const cardCategory = card.getAttribute('data-category');
-            const isVisible = (cat === 'all' || cardCategory === cat);
+            document.getElementById('initialStateMessage').classList.add('hidden');
+            const grid = document.getElementById('destinationsGrid');
+            grid.classList.remove('hidden');
 
-            card.style.display = isVisible ? 'flex' : 'none';
-            document.getElementById('noMatchesText').classList.toggle('hidden', isVisible);
+            document.getElementById('liveSearchBar').value = '';
+
+            const cards = document.querySelectorAll('#destinationsGrid .place-card');
+            let visibleCount = 0;
+
+            cards.forEach(card => {
+                if (card.getAttribute('data-category') === category) {
+                    card.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            document.getElementById('noResults').classList.toggle('hidden', visibleCount > 0);
             document.getElementById('explore').scrollIntoView({ behavior: 'smooth' });
         }
 
-        function resetSearch() {
-            document.getElementById('destinationSearchInput').value = '';
-            document.getElementById('searchFilterPill').classList.add('hidden');
-            document.getElementById('noMatchesText').classList.add('hidden');
-
-            const allTab = document.querySelector('.filter-tab-btn');
-            document.querySelectorAll('.filter-tab-btn').forEach(b => b.classList.remove('active'));
-            allTab.classList.add('active');
-
-            document.querySelector('.place-catalog-card').style.display = 'flex';
+        function showFilterBadge(labelText) {
+            const container = document.getElementById('activeFilterBadgeContainer');
+            document.getElementById('activeFilterText').innerText = labelText;
+            container.classList.remove('hidden');
         }
 
-        function updateVehicleSettings() {
-            const mode = document.querySelector('input[name="travelModeOption"]:checked').value;
-            const fuelBlock = document.getElementById('fuelSettingsArea');
-            const busAlert = document.getElementById('busFareAlert');
-            const mileageField = document.getElementById('fuelEfficiency');
+        function clearSearch() {
+            document.getElementById('liveSearchBar').value = '';
+            document.querySelectorAll('.filter-pill').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('activeFilterBadgeContainer').classList.add('hidden');
+            document.getElementById('destinationsGrid').classList.add('hidden');
+            document.getElementById('initialStateMessage').classList.remove('hidden');
+            document.getElementById('noResults').classList.add('hidden');
+        }
+
+        function handleTransportModeChange() {
+            const mode = document.querySelector('input[name="transMode"]:checked').value;
+            const fuelParams = document.getElementById('fuelParamsRow');
+            const busNotice = document.getElementById('busFareNotice');
+            const mileageInput = document.getElementById('vehicleMileage');
 
             if (mode === 'bike') {
-                fuelBlock.classList.remove('hidden');
-                busAlert.classList.add('hidden');
-                mileageField.value = 45;
+                fuelParams.classList.remove('hidden');
+                busNotice.classList.add('hidden');
+                mileageInput.value = 45;
             } else if (mode === 'car') {
-                fuelBlock.classList.remove('hidden');
-                busAlert.classList.add('hidden');
-                mileageField.value = 16;
-            } else {
-                fuelBlock.classList.add('hidden');
-                busAlert.classList.remove('hidden');
+                fuelParams.classList.remove('hidden');
+                busNotice.classList.add('hidden');
+                mileageInput.value = 16;
+            } else if (mode === 'bus') {
+                fuelParams.classList.add('hidden');
+                busNotice.classList.remove('hidden');
             }
-            runBudgetMath();
+
+            calculateBudget();
         }
 
-        function runBudgetMath() {
-            const distance = parseInt(document.getElementById('routeDistance').value);
-            const people = parseInt(document.getElementById('groupSize').value);
-            const mode = document.querySelector('input[name="travelModeOption"]:checked').value;
+        function calculateBudget() {
+            const dist = parseInt(document.getElementById('tripDist').value);
+            const count = parseInt(document.getElementById('travelerCount').value);
+            const mode = document.querySelector('input[name="transMode"]:checked').value;
 
-            document.getElementById('distanceReadout').innerText = `${distance} km`;
-            document.getElementById('groupSizeReadout').innerText = `${people} ${people > 1 ? 'Persons' : 'Person'}`;
+            document.getElementById('distDisplay').innerText = dist + " km";
+            document.getElementById('countDisplay').innerText = count + (count > 1 ? " Persons" : " Person");
 
-            let transitCost = 0;
-            let litresUsed = 0;
+            let transitTotal = 0;
+            let fuelLitres = 0;
 
             if (mode === 'bus') {
-                transitCost = Math.round(distance * 1.60 * people);
-                document.getElementById('fuelUsageLabel').innerText = "Bus Mode Active:";
-                document.getElementById('fuelQuantityDisplay').innerText = "Public Transit Fare";
+                transitTotal = Math.round(dist * 1.60 * count);
+                document.getElementById('fuelBurnLabel').innerText = "Bus Mode Active:";
+                document.getElementById('fuelLitresDisplay').innerText = "Public Transit Fare";
             } else {
-                const fuelPrice = parseFloat(document.getElementById('costPerLitre').value) || 105;
-                const mileage = parseFloat(document.getElementById('fuelEfficiency').value) || (mode === 'bike' ? 45 : 16);
+                const pricePerLitre = parseFloat(document.getElementById('fuelPrice').value) || 105;
+                const mileage = parseFloat(document.getElementById('vehicleMileage').value) || (mode === 'bike' ? 45 : 16);
 
-                litresUsed = (distance / mileage);
-                transitCost = Math.round(litresUsed * fuelPrice);
+                fuelLitres = (dist / mileage);
+                transitTotal = Math.round(fuelLitres * pricePerLitre);
 
-                document.getElementById('fuelUsageLabel').innerText = "Estimated Fuel Consumption:";
-                document.getElementById('fuelQuantityDisplay').innerText = `${litresUsed.toFixed(2)} Litres`;
+                document.getElementById('fuelBurnLabel').innerText = "Estimated Fuel Consumption:";
+                document.getElementById('fuelLitresDisplay').innerText = fuelLitres.toFixed(2) + " Litres";
             }
 
-            const foodCost = people * 350;
-            const stayChoice = document.querySelector('input[name="lodgingOption"]:checked').value;
-            let perHeadStay = 0;
-            if (stayChoice === 'camp') perHeadStay = 800;
-            if (stayChoice === 'resort') perHeadStay = 2200;
+            const foodTotal = count * 350;
 
-            const stayCost = people * perHeadStay;
-            const passCost = people * 50;
-            const total = transitCost + foodCost + stayCost + passCost;
+            const stayTier = document.querySelector('input[name="stayTier"]:checked').value;
+            let stayPerHead = 0;
+            if (stayTier === 'camp') stayPerHead = 800;
+            if (stayTier === 'resort') stayPerHead = 2200;
 
-            document.getElementById('travelExpenseDisplay').innerText = `₹${transitCost}`;
-            document.getElementById('mealExpenseDisplay').innerText = `₹${foodCost}`;
-            document.getElementById('stayExpenseDisplay').innerText = `₹${stayCost}`;
-            document.getElementById('passExpenseDisplay').innerText = `₹${passCost}`;
-            document.getElementById('overallBudgetDisplay').innerText = `₹${total.toLocaleString('en-IN')}`;
+            const stayTotal = count * stayPerHead;
+            const permitsTotal = count * 50;
+
+            const grandTotal = transitTotal + foodTotal + stayTotal + permitsTotal;
+
+            document.getElementById('transitCost').innerText = "₹" + transitTotal;
+            document.getElementById('foodCost').innerText = "₹" + foodTotal;
+            document.getElementById('stayCost').innerText = "₹" + stayTotal;
+            document.getElementById('permitCost').innerText = "₹" + permitsTotal;
+            document.getElementById('totalCost').innerText = "₹" + grandTotal.toLocaleString('en-IN');
         }
 
-        function readWishlistData() {
-            try { return JSON.parse(localStorage.getItem('saved_travel_places')) || []; }
+        function getSavedItinerary() {
+            try { return JSON.parse(localStorage.getItem('terranova_itinerary')) || []; } 
             catch (e) { return []; }
         }
 
-        function writeWishlistData(data) {
-            localStorage.setItem('saved_travel_places', JSON.stringify(data));
-            refreshWishlistView();
+        function saveItinerary(list) {
+            localStorage.setItem('terranova_itinerary', JSON.stringify(list));
+            updateItineraryUI();
         }
 
-        function toggleSavedItem(name, button) {
-            let items = readWishlistData();
-            const itemIndex = items.indexOf(name);
+        function toggleFavorite(placeName, btnEl) {
+            let list = getSavedItinerary();
+            const index = list.indexOf(placeName);
 
-            if (itemIndex === -1) {
-                items.push(name);
-                if (button) button.innerText = '❤️';
+            if (index === -1) {
+                list.push(placeName);
+                if (btnEl) btnEl.innerText = "❤️";
             } else {
-                items.splice(itemIndex, 1);
-                if (button) button.innerText = '🤍';
+                list.splice(index, 1);
+                if (btnEl) btnEl.innerText = "🤍";
             }
-            writeWishlistData(items);
-            syncHeartIcons();
+
+            saveItinerary(list);
+            syncCardHeartIcons();
         }
 
-        function syncHeartIcons() {
-            const list = readWishlistData();
-            document.querySelectorAll('.save-heart-btn').forEach(btn => {
-                const parent = btn.closest('.highlight-place-card') || btn.closest('.place-catalog-card');
-                const title = parent ? parent.querySelector('h3').innerText : '';
-                btn.innerText = list.includes(title) ? '❤️' : '🤍';
+        function syncCardHeartIcons() {
+            const list = getSavedItinerary();
+            document.querySelectorAll('.btn-fav').forEach(btn => {
+                const card = btn.closest('.place-card') || btn.closest('.featured-card');
+                const title = card ? card.querySelector('h3').innerText : '';
+                if (list.includes(title)) {
+                    btn.innerText = "❤️";
+                } else {
+                    btn.innerText = "🤍";
+                }
             });
         }
 
-        function refreshWishlistView() {
-            const list = readWishlistData();
-            document.getElementById('wishlistCounter').innerText = list.length;
+        function updateItineraryUI() {
+            const list = getSavedItinerary();
+            document.getElementById('itineraryCountBadge').innerText = list.length;
 
-            const listWrapper = document.getElementById('wishlistItemsContainer');
+            const container = document.getElementById('itineraryList');
             if (list.length === 0) {
-                listWrapper.innerHTML = `
-                    <div class="empty-list-message">
+                container.innerHTML = `
+                    <div class="empty-itinerary">
                         <span>🤍</span>
                         <p>No destinations saved yet. Click the heart icon on any card to add spots to your wishlist.</p>
-                    </div>`;
+                    </div>
+                `;
                 return;
             }
 
-            listWrapper.innerHTML = list.map((spot, i) => `
-                <div class="wishlist-row">
-                    <span class="row-spot-name"><b>${i + 1}. ${spot}</b></span>
-                    <div class="row-buttons">
-                        <button type="button" class="btn-micro" onclick="openPassModal('${spot}')">Book</button>
-                        <button type="button" class="btn-remove-micro" onclick="toggleSavedItem('${spot}')">&times;</button>
+            container.innerHTML = list.map((item, idx) => `
+                <div class="itinerary-item">
+                    <div class="itinerary-item-title"><b>${idx + 1}. ${item}</b></div>
+                    <div class="itinerary-item-actions">
+                        <button type="button" class="btn-item-book" onclick="openBookingModal('${item}')">Book</button>
+                        <button type="button" class="btn-item-del" onclick="toggleFavorite('${item}')">&times;</button>
                     </div>
                 </div>
             `).join('');
         }
 
-        function toggleWishlist() {
-            document.getElementById('wishlistDrawer').classList.toggle('hidden');
-            document.getElementById('drawerOverlay').classList.toggle('hidden');
+        function toggleItineraryDrawer() {
+            document.getElementById('itineraryDrawer').classList.toggle('hidden');
+            document.getElementById('drawerBackdrop').classList.toggle('hidden');
         }
 
-        function emptyWishlist() {
+        function clearAllItinerary() {
             if (confirm("Remove all saved destinations from your wishlist?")) {
-                localStorage.removeItem('saved_travel_places');
-                refreshWishlistView();
-                syncHeartIcons();
+                localStorage.removeItem('terranova_itinerary');
+                updateItineraryUI();
+                syncCardHeartIcons();
             }
         }
 
-        function bookWishlistTour() {
-            const list = readWishlistData();
-            if (!list.length) return alert("Wishlist is empty!");
-            toggleWishlist();
-            openPassModal(`Custom Circuit (${list.length} Places)`);
+        function bookEntireItinerary() {
+            const list = getSavedItinerary();
+            if (list.length === 0) return alert("Wishlist is empty!");
+            toggleItineraryDrawer();
+            openBookingModal("Custom Circuit (" + list.length + " Places)");
         }
 
-        function openPassModal(spotTitle) {
-            document.getElementById('chosenDestinationField').value = spotTitle;
-            document.getElementById('modalTargetTitle').innerText = `Book ${spotTitle}`;
-            document.getElementById('passBookingModal').classList.remove('hidden');
+        function openBookingModal(placeName) {
+            document.getElementById('bookedPlace').value = placeName;
+            document.getElementById('modalPlaceTitle').innerText = 'Book ' + placeName;
+            document.getElementById('bookingModal').classList.remove('hidden');
         }
 
-        function closePassModal() {
-            document.getElementById('passBookingModal').classList.add('hidden');
+        function closeBookingModal() {
+            document.getElementById('bookingModal').classList.add('hidden');
         }
 
-        window.onclick = function(e) {
-            const modal = document.getElementById('passBookingModal');
-            if (e.target === modal) closePassModal();
+        window.onclick = function(event) {
+            const modal = document.getElementById('bookingModal');
+            if (event.target === modal) closeBookingModal();
         };
 
-        function submitPassForm(e) {
+        function handleModalSubmit(e) {
             e.preventDefault();
-            const spot = document.getElementById('chosenDestinationField').value;
-            alert(`Pass confirmed for ${spot}! Details sent to your email.`);
-            closePassModal();
+            const place = document.getElementById('bookedPlace').value;
+            alert('Pass confirmed for ' + place + '! Details sent to your email.');
+            closeBookingModal();
         }
 
-        // Initialize state
-        runBudgetMath();
-        refreshWishlistView();
-        syncHeartIcons();
+        function addLocationToMatrix() {
+            const selectEl = document.getElementById('customSpotSelect');
+            const dataParts = selectEl.value.split('|');
+            const tableBody = document.getElementById('comparisonTableBody');
+            const newRow = document.createElement('tr');
+
+            newRow.innerHTML = `
+                <td><b>${dataParts[0]}</b></td>
+                <td>${dataParts[1]}</td>
+                <td>${dataParts[2]}</td>
+                <td>${dataParts[3]}</td>
+                <td>${dataParts[4]}</td>
+                <td>${dataParts[5]}</td>
+                <td><button class="btn-row-del" onclick="removeRow(this)">✕</button></td>
+            `;
+
+            tableBody.appendChild(newRow);
+            alert(dataParts[0] + ' added to Comparison Matrix!');
+        }
+
+        function removeRow(btn) {
+            btn.closest('tr').remove();
+        }
+
+        // Initialize state on load
+        initTheme();
+        calculateBudget();
+        updateItineraryUI();
+        syncCardHeartIcons();
     </script>
 </body>
 </html>
